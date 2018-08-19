@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hundsun.booklending.mapper.UserMapper">
+
+
+	<!-- 根据用户id获取用户 -->
+	<select id="getUserByUserId" resultType="User">
+		select
+		u.*
+		from user u
+		where u.userid=#{userId}
+	</select>
+
+	<insert id="saveUser" parameterType="user">
+		insert into user
+		(userid,password)
+		value (#{user.userId},#{user.password})
+	</insert>
+
+	<insert id="borrow">
+		insert into borrow
+		(borrowid,userid,bookid,borrowtime,status)
+		value
+		(#{borrowId},#{userId},#{bookId},#{borrowTime},#{status})
+	</insert>
+
+	<select id="searchBorrowDetails" resultType="java.util.Map">
+		select b.*,br.*
+		from
+		book b
+		left
+		join borrow br
+		on
+		b.bookid=br.bookid
+		where
+		br.borrowid=#{borrowId}
+	</select>
+
+	<select id="searchBorrow " resultType="Book">
+		select b.*
+		from book b
+		left
+		join borrow br
+		on
+		b.bookid=br.bookid
+		where br.userid=#{userId}
+	</select>
+
+	<delete id="deletBorrow">
+		delete from borrow
+		where
+		borrowid=#{borrowId}
+	</delete>
+
+	<insert id="saveCommend">
+		insert into commend
+		(userid,bookid,commendtime,reason)
+		value
+		(#{userId},#{book.bookId},#{book.addTime},#{reason})
+	</insert>
+
+</mapper>
