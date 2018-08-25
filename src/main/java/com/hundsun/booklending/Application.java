@@ -6,6 +6,7 @@ import org.apache.ibatis.plugin.Interceptor;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.annotation.Bean;
 
 import com.github.pagehelper.PageHelper;
@@ -19,6 +20,7 @@ import org.springframework.boot.SpringApplication;
  *
  */
 @SpringBootApplication
+@ServletComponentScan
 @MapperScan("com.hundsun.booklending.mapper")
 public class Application {
 
