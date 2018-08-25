@@ -43,7 +43,7 @@ import lombok.extern.log4j.Log4j;
  *
  */
 @RequestMapping("/api/user")
-@RestController
+@Controller
 @Log4j
 public class UserController {
 
@@ -60,7 +60,7 @@ public class UserController {
 	 * @param pw
 	 * @return
 	 */
-	@RequestMapping("/login")
+	@RequestMapping(value = "/login", method = RequestMethod.POST)
 	@ResponseBody
 	public String login(@RequestParam String userid, @RequestParam String pw) {
 		User user = userService.getUserByUserId(userid);
@@ -131,7 +131,7 @@ public class UserController {
 	 * @param borrow_id
 	 * @return
 	 */
-	@RequestMapping("/borrowDetails")
+	@RequestMapping(value = "/borrowDetails", method = RequestMethod.GET)
 	@ResponseBody
 	public String borrowDetails(@RequestParam String borrow_id) {
 		Map borrowDetails = userService.searchBorrowDetails(borrow_id);
@@ -223,7 +223,7 @@ public class UserController {
 	 * @param borrowInfo
 	 * @return
 	 */
-	@RequestMapping(value = "/searchBorrow")
+	@RequestMapping(value = "/searchBorrow", method = RequestMethod.GET)
 	@ResponseBody
 	public String searchBorrow(@RequestParam String user_id, @RequestParam int start, @RequestParam int limit) {
 		PageHelper.startPage(start, limit);
@@ -298,7 +298,7 @@ public class UserController {
 	 * @param limit
 	 * @return
 	 */
-	@RequestMapping("/getverification")
+	@RequestMapping(value = "/getverification", method = RequestMethod.GET)
 	@ResponseBody
 	public String getVerification(@RequestParam String user_id) {
 		String verification = OtherUtil.getRandomCode(8);

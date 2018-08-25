@@ -26,6 +26,7 @@ import com.hundsun.booklending.util.HttpUtil;
 import com.hundsun.booklending.util.JsonUtil;
 import com.hundsun.booklending.util.OtherUtil;
 
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.log4j.Log4j;
 
 /**
@@ -49,7 +50,7 @@ public class BookController {
 	 * @param limit
 	 * @return
 	 */
-	@RequestMapping("/allBooks")
+	@RequestMapping(value = "/allBooks", method = RequestMethod.GET)
 	@ResponseBody
 	public String getAllBooks(@RequestParam int start, @RequestParam int limit) {
 		// start是当前页数，limit为每页页数
@@ -67,7 +68,7 @@ public class BookController {
 	 * @param limit
 	 * @return
 	 */
-	@RequestMapping("/newBooks")
+	@RequestMapping(value = "/newBooks", method = RequestMethod.GET)
 	@ResponseBody
 	public String getNewBooks(@RequestParam int start, @RequestParam int limit) {
 		// start是当前页数，limit为每页页数
@@ -85,7 +86,7 @@ public class BookController {
 	 * @param limit
 	 * @return
 	 */
-	@RequestMapping("/AddedBooks")
+	@RequestMapping(value = "/AddedBooks", method = RequestMethod.GET)
 	@ResponseBody
 	public String getAddedBooks(@RequestParam int start, @RequestParam int limit) {
 		// start是当前页数，limit为每页页数
@@ -104,7 +105,7 @@ public class BookController {
 	 * @param limit
 	 * @return
 	 */
-	@RequestMapping("/searchBooks")
+	@RequestMapping(value = "/searchBooks", method = RequestMethod.GET)
 	@ResponseBody
 	public String searchBooks(@RequestParam String title, @RequestParam int start, @RequestParam int limit) {
 		// start是当前页数，limit为每页页数
@@ -121,7 +122,7 @@ public class BookController {
 	 * @param ISBN
 	 * @return
 	 */
-	@RequestMapping("/details")
+	@RequestMapping(value = "/details", method = RequestMethod.GET)
 	@ResponseBody
 	public String searchBookDetails(@RequestParam String ISBN) {
 		// start是当前页数，limit为每页页数
@@ -137,7 +138,7 @@ public class BookController {
 	 * @param limit
 	 * @return
 	 */
-	@RequestMapping("/comment")
+	@RequestMapping(value = "/comment", method = RequestMethod.GET)
 	@ResponseBody
 	public String bookComments(@RequestParam String ISBN, @RequestParam int start, @RequestParam int limit) {
 		PageHelper.startPage(start, limit);
@@ -146,7 +147,7 @@ public class BookController {
 		String bookinfos = JSON.toJSONString(pageInfo);
 		return bookinfos;
 	}
-	
+
 	/**
 	 * 查看推荐的列表
 	 * 
@@ -155,7 +156,7 @@ public class BookController {
 	 * @param limit
 	 * @return
 	 */
-	@RequestMapping("/recommendList")
+	@RequestMapping(value = "/recommendList", method = RequestMethod.GET)
 	@ResponseBody
 	public String searchCommnedBooks(@RequestParam String user_id, @RequestParam int start, @RequestParam int limit) {
 		// start是当前页数，limit为每页页数

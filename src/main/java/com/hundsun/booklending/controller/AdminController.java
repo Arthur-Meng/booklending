@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hundsun.booklending.service.BookService;
 
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.log4j.Log4j;
 
 /**
@@ -33,6 +34,7 @@ public class AdminController {
 	 * @param user
 	 * @return
 	 */
+	@ApiOperation(value = "取认借书", notes = "取认借书")
 	@RequestMapping(value = "/confirmBorrow", method = RequestMethod.POST)
 	@ResponseBody
 	public String confirmBorrow(@RequestBody Map borrowInfo) {
