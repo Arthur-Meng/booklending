@@ -15,6 +15,8 @@ public class User {
 	public String userId;
 	// 姓名
 	public String name;
+	// 邮箱
+	public String email;
 	// 性别:女性为0，男性为1
 	public int sex;
 	// 密码
@@ -33,11 +35,13 @@ public class User {
 	/**
 	 * 默认构造方法
 	 */
-	public User(){
-		
+	public User() {
+
 	}
+
 	/**
 	 * User构成方法
+	 * 
 	 * @param userId
 	 * @param password
 	 */

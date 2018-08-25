@@ -1,5 +1,6 @@
 package com.hundsun.booklending.controller;
 
+import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -7,6 +8,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import javax.mail.MessagingException;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageHelper;
@@ -25,8 +29,10 @@ import com.hundsun.booklending.bean.Book;
 import com.hundsun.booklending.bean.User;
 import com.hundsun.booklending.service.BookService;
 import com.hundsun.booklending.service.UserService;
+import com.hundsun.booklending.util.EmailUtils;
 import com.hundsun.booklending.util.HttpUtil;
 import com.hundsun.booklending.util.JsonUtil;
+import com.hundsun.booklending.util.OtherUtil;
 
 import lombok.extern.log4j.Log4j;
 
@@ -37,7 +43,7 @@ import lombok.extern.log4j.Log4j;
  *
  */
 @RequestMapping("/api/user")
-@Controller
+@RestController
 @Log4j
 public class UserController {
 
@@ -285,22 +291,32 @@ public class UserController {
 	}
 
 	/**
-	 * 查看推荐的列表
+	 * 获取验证码
 	 * 
 	 * @param user_id
 	 * @param start
 	 * @param limit
 	 * @return
 	 */
-	@RequestMapping("/recommendList")
+	@RequestMapping("/getverification")
 	@ResponseBody
-	public String searchCommnedBooks(@RequestParam String user_id, @RequestParam int start, @RequestParam int limit) {
-		// start是当前页数，limit为每页页数
-		PageHelper.startPage(start, limit);
-		List searchBooks = bookService.searchCommendBooks(user_id);
-		PageInfo<Map> pageInfo = new PageInfo<Map>(searchBooks);
-		String bookinfos = JSON.toJSONString(pageInfo);
-		return bookinfos;
+	public String getVerification(@RequestParam String user_id) {
+		String verification = OtherUtil.getRandomCode(8);
+		User user = userService.getUserByUserId(user_id);
+		// 发生邮件
+		if (null != user.getEmail()) {
+			try {
+				EmailUtils.sendHtmlMail(user.getEmail(), "验证码", user_id + "，您的验证码是:" + verification + "。");
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (MessagingException e) {
+				log.error(e);
+			}
+			return verification;
+		} else {
+			return "请保存邮箱信息后再试";
+		}
 	}
 
 }

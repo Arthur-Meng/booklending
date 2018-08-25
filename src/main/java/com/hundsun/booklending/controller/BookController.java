@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageHelper;
@@ -142,6 +143,25 @@ public class BookController {
 		PageHelper.startPage(start, limit);
 		List bookComments = bookService.searchBookComments(ISBN);
 		PageInfo<Comment> pageInfo = new PageInfo<Comment>(bookComments);
+		String bookinfos = JSON.toJSONString(pageInfo);
+		return bookinfos;
+	}
+	
+	/**
+	 * 查看推荐的列表
+	 * 
+	 * @param user_id
+	 * @param start
+	 * @param limit
+	 * @return
+	 */
+	@RequestMapping("/recommendList")
+	@ResponseBody
+	public String searchCommnedBooks(@RequestParam String user_id, @RequestParam int start, @RequestParam int limit) {
+		// start是当前页数，limit为每页页数
+		PageHelper.startPage(start, limit);
+		List searchBooks = bookService.searchCommendBooks(user_id);
+		PageInfo<Map> pageInfo = new PageInfo<Map>(searchBooks);
 		String bookinfos = JSON.toJSONString(pageInfo);
 		return bookinfos;
 	}
