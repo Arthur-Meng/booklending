@@ -10,6 +10,7 @@ import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.annotation.Bean;
 
 import com.github.pagehelper.PageHelper;
+import com.hundsun.booklending.cache.ListCache;
 
 import org.springframework.boot.SpringApplication;
 

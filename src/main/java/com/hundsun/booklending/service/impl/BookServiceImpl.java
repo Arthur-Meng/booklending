@@ -18,6 +18,7 @@ import com.google.gson.Gson;
 import com.hundsun.booklending.bean.Book;
 import com.hundsun.booklending.controller.BookController;
 import com.hundsun.booklending.mapper.BookMapper;
+import com.hundsun.booklending.mapper.UserMapper;
 import com.hundsun.booklending.service.BookService;
 import com.hundsun.booklending.util.OtherUtil;
 import com.mysql.jdbc.log.Log;
@@ -29,6 +30,8 @@ import lombok.extern.log4j.Log4j;
 public class BookServiceImpl implements BookService {
 	@Autowired
 	private BookMapper bookMapper;
+	@Autowired
+	private UserMapper userMapper;
 
 	public boolean saveBook(Book book) {
 		if (bookMapper.saveBook(book)) {
@@ -49,20 +52,36 @@ public class BookServiceImpl implements BookService {
 		}
 	}
 
+	public List searchBookStatus(String ISBN) {
+		return bookMapper.searchBookStatus(ISBN);
+	}
+
 	public Book getBookByBookId(String bookId) {
-		return null;
+		return bookMapper.getBookById(bookId);
 	}
 
 	public List getAllBooks() {
 		return bookMapper.getAllBooks();
 	}
 
+	public List getAllVoidBooks() {
+		return bookMapper.getAllVoidBooks();
+	}
+
 	public List getNewBooks() {
-		return bookMapper.getAllBooks(true, 0);
+		return bookMapper.getAllBooks(true, 0, null, true);
 	}
 
 	public List getAddedBooks() {
-		return bookMapper.getAllBooks(null, 0);
+		return bookMapper.getAllBooks(null, 0, true, null);
+	}
+
+	public List searchLikeBook() {
+		return bookMapper.searchLikeBook(1);
+	}
+
+	public List searchWannaBook() {
+		return bookMapper.searchLikeBook(2);
 	}
 
 	public List searchBooks(String title, Boolean ifNew) {
@@ -70,23 +89,25 @@ public class BookServiceImpl implements BookService {
 	}
 
 	public Book searchBookDetails(String ISBN) {
-		return bookMapper.searchBookDetails(ISBN);
+		Book book = (Book) bookMapper.searchBookDetails(ISBN).get(0);
+		book.setBookId("");
+		return book;
 	}
 
 	public List searchBookComments(String ISBN) {
 		return bookMapper.searchBookComments(ISBN);
 	}
-	
-	public List searchCommendBooks(String userId){
+
+	public List searchBookComments() {
+		return bookMapper.searchBookComments();
+	}
+
+	public List searchCommendBooks(String userId) {
 		return bookMapper.searchCommendBooks(userId);
 	}
 
-	public Boolean likeBook(String ISBN, String userId, int status) {
-		if (bookMapper.likeBook(ISBN, userId, status)) {
-			return true;
-		} else {
-			return false;
-		}
+	public List searchUserCommendBooks(String userId) {
+		return bookMapper.searchUserCommendBooks(userId);
 	}
 
 	public Boolean updateBook(String bookId, int status) {
@@ -105,8 +126,8 @@ public class BookServiceImpl implements BookService {
 		}
 	}
 
-	public Boolean renew(String borrowId) {
-		if (bookMapper.renew(borrowId)) {
+	public Boolean renew(String returnTime, String borrowId) {
+		if (bookMapper.renew(returnTime, borrowId)) {
 			return true;
 		} else {
 			return false;
@@ -122,9 +143,8 @@ public class BookServiceImpl implements BookService {
 		book.setTitle((String) map.get("title"));
 		book.setStatus("0");
 		try {
-			// String authors = map.get("author").toString()
-			// .replace("[", "").replace("]", "").replaceAll("\"", "");
-			book.setAuthor(map.get("author").toString());
+			String authors = map.get("author").toString().replace("[", "").replace("]", "").replaceAll("\"", "");
+			book.setAuthor(authors);
 			book.setPubdate((String) map.get("pubdate"));
 			List<Map<String, Object>> tagsList = (List<Map<String, Object>>) map.get("tags");
 			List<String> tagsName = new ArrayList<String>();
@@ -134,9 +154,8 @@ public class BookServiceImpl implements BookService {
 			book.setTags(String.join(",", tagsName));
 			book.setImage((String) map.get("image"));
 			book.setBinding((String) map.get("binding"));
-			// String trans = map.get("translator").toString()
-			// .replace("[", "").replace("]", "").replaceAll("\"", "");
-			book.setTranslator(map.get("translator").toString());
+			String trans = map.get("translator").toString().replace("[", "").replace("]", "").replaceAll("\"", "");
+			book.setTranslator(trans);
 			book.setPublisher((String) map.get("publisher"));
 			book.setAuthor_intro((String) map.get("author_intro"));
 			book.setSummary((String) map.get("summary"));
@@ -149,4 +168,13 @@ public class BookServiceImpl implements BookService {
 
 	}
 
+	@Override
+	public Boolean deleteBook(String bookId) {
+		return bookMapper.deleteBook(bookId);
+	}
+
+	@Override
+	public Boolean deleteBookStatus(String borrowId) {
+		return bookMapper.deleteBookStatus(borrowId);
+	}
 }

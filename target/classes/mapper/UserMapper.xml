@@ -11,6 +11,12 @@
 		where u.userid=#{userId}
 	</select>
 
+	<select id="getAllUser" resultType="User">
+		select
+		u.*
+		from user u
+	</select>
+
 	<insert id="saveUser" parameterType="user">
 		insert into user
 		(userid,password)
@@ -19,7 +25,7 @@
 
 	<insert id="borrow">
 		insert into borrow
-		(borrowid,userid,bookid,borrowtime,status)
+		(borrowid,userid,bookid,borrowtime,borrowstatus)
 		value
 		(#{borrowId},#{userId},#{bookId},#{borrowTime},#{status})
 	</insert>
@@ -34,10 +40,11 @@
 		b.bookid=br.bookid
 		where
 		br.borrowid=#{borrowId}
+		order by br.borrowtime DESC,br.borrowstatus
 	</select>
 
-	<select id="searchBorrow " resultType="Book">
-		select b.*
+	<select id="searchBorrow" resultType="java.util.Map">
+		select b.*,br.*
 		from book b
 		left
 		join borrow br
@@ -46,7 +53,7 @@
 		where br.userid=#{userId}
 	</select>
 
-	<delete id="deletBorrow">
+	<delete id="deleteBorrow">
 		delete from borrow
 		where
 		borrowid=#{borrowId}
@@ -54,9 +61,51 @@
 
 	<insert id="saveCommend">
 		insert into commend
-		(userid,bookid,commendtime,reason)
+		(userid,ISBN,reason,date)
 		value
-		(#{userId},#{book.bookId},#{book.addTime},#{reason})
+		(#{userId},#{book.ISBN},#{reason},#{date})
 	</insert>
+
+
+	<select id="searchAllBorrow" resultType="java.util.Map">
+		select b.*,br.*
+		from
+		book
+		b
+		left
+		join borrow br
+		on
+		b.bookid=br.bookid
+		where
+		br.status=#{status}
+	</select>
+
+	<update id="updateBorrow">
+		update borrow br
+		set br.borrowstatus=#{status},
+		br.returntime=#{returnTime}
+		where
+		bs.borrowid=#{borrowId,jdbcType=VARCHAR}
+	</update>
+
+	<update id="updateUser" parameterType="user">
+		update user u
+		set
+		<if test="allloginnum!=null">
+			allloginnum=#{user.allloginnum,jdbcType=VARCHAR},
+		</if>
+		<if test="yearloginnum!=null">
+			yearloginnum=#{user.yearloginnum,jdbcType=VARCHAR},
+		</if>
+		<if test="mouthloginnum!=null">
+			mouthloginnum=#{user.mouthloginnum,jdbcType=VARCHAR},
+		</if>
+		<if test="weekloginnum!=null">
+			weekloginnum=#{user.weekloginnum,jdbcType=VARCHAR}
+		</if>
+		where
+		bs.userid=#{user.userid,jdbcType=VARCHAR}
+	</update>
+
 
 </mapper>

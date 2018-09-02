@@ -1,5 +1,7 @@
 package com.hundsun.booklending.controller;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -13,7 +15,9 @@ import javax.mail.MessagingException;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,19 +25,21 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.hundsun.booklending.bean.Book;
+import com.hundsun.booklending.bean.MsgBean;
 import com.hundsun.booklending.bean.User;
+import com.hundsun.booklending.cache.ListCache;
 import com.hundsun.booklending.service.BookService;
 import com.hundsun.booklending.service.UserService;
 import com.hundsun.booklending.util.EmailUtils;
 import com.hundsun.booklending.util.HttpUtil;
 import com.hundsun.booklending.util.JsonUtil;
 import com.hundsun.booklending.util.OtherUtil;
-
 import lombok.extern.log4j.Log4j;
 
 /**
@@ -46,6 +52,9 @@ import lombok.extern.log4j.Log4j;
 @Controller
 @Log4j
 public class UserController {
+
+	@Value("${booklending.imagesPath}")
+	private String webUploadPath;
 
 	@Autowired
 	private UserService userService;
@@ -62,19 +71,24 @@ public class UserController {
 	 */
 	@RequestMapping(value = "/login", method = RequestMethod.POST)
 	@ResponseBody
-	public String login(@RequestParam String userid, @RequestParam String pw) {
-		User user = userService.getUserByUserId(userid);
+	public String login(@RequestParam String user_id, @RequestParam String pw) {
+		User user = userService.getUserByUserId(user_id);
 		if (StringUtils.isNotBlank(pw)) {
 			if (null == user) {
-				return "没有该用户";
+				return new MsgBean(1, "没有该用户").toReturn();
 			}
 			if (pw.equals(user.getPassword())) {
-				return "登陆成功";
+				user.setAllLoginNum(user.getAllLoginNum() + 1);
+				user.setWeekLoginNum(user.getWeekLoginNum() + 1);
+				user.setMonthLoginNum(user.getMonthLoginNum() + 1);
+				user.setYearLoginNum(user.getYearLoginNum() + 1);
+				userService.saveUser(user);
+				return new MsgBean(0, "登陆成功").toReturn();
 			} else {
-				return "密码错误，请重试";
+				return new MsgBean(1, "密码错误，请重试").toReturn();
 			}
 		} else {
-			return "请输入密码";
+			return new MsgBean(1, "请输入密码").toReturn();
 		}
 	}
 
@@ -89,15 +103,15 @@ public class UserController {
 	public String register(@RequestBody User user) {
 		try {
 			if (userService.saveUser(user)) {
-				return "保存成功";
+				return new MsgBean(0, "保存成功").toReturn();
 			} else {
-				return "保存失败";
+				return new MsgBean(1, "保存失败").toReturn();
 			}
 		} catch (DuplicateKeyException e) {
-			return "已经注册，请登陆";
+			return new MsgBean(1, "已经注册，请登陆").toReturn();
 		} catch (Exception e1) {
 			log.error(e1);
-			return "异常错误，请检查";
+			return new MsgBean(1, "异常错误，请检查").toReturn();
 		}
 
 	}
@@ -110,18 +124,18 @@ public class UserController {
 	 */
 	@RequestMapping(value = "/borrow", method = RequestMethod.POST)
 	@ResponseBody
-	public String borrow(@RequestBody Map borrowInfo) {
+	public String borrow(@RequestBody Map borrow_info) {
 		try {
-			if (userService.borrow((String) borrowInfo.get("user_id"), (String) borrowInfo.get("book_id"))) {
-				return "借阅成功";
+			if (userService.borrow((String) borrow_info.get("user_id"), (String) borrow_info.get("book_id"))) {
+				return new MsgBean(0, "借阅成功").toReturn();
 			} else {
-				return "借阅失败";
+				return new MsgBean(1, "借阅失败").toReturn();
 			}
 		} catch (DuplicateKeyException e) {
-			return "该图书已被借阅";
+			return new MsgBean(1, "该图书已被借阅").toReturn();
 		} catch (Exception e1) {
 			log.error(e1);
-			return "异常错误，请检查";
+			return new MsgBean(1, "异常错误，请检查").toReturn();
 		}
 	}
 
@@ -138,7 +152,7 @@ public class UserController {
 		borrowDetails.put("start_time", borrowDetails.get("borrowtime"));
 		DateFormat df = new SimpleDateFormat("yyyyMMdd");
 		try {
-			Date start = df.parse((String) borrowDetails.get("borrowtime"));
+			Date start = df.parse(String.valueOf(borrowDetails.get("borrowtime")));
 			Calendar cal = Calendar.getInstance();
 			cal.setTime(start);
 			int borrowDays = 30;
@@ -161,36 +175,20 @@ public class UserController {
 	 * @param user
 	 * @return
 	 */
-	@RequestMapping(value = "/confirmBorrow", method = RequestMethod.POST)
+	@RequestMapping(value = "/cancelBorrow", method = RequestMethod.POST)
 	@ResponseBody
-	public String cancelBorrow(@RequestBody Map borrowInfo) {
+	public String cancelBorrow(@RequestBody Map borrow_info) {
 		try {
-			if (bookService.updateBorrow((String) borrowInfo.get("borrow_id"), 9)) {
-				return "确认借阅成功";
+			if (bookService.updateBorrow((String) borrow_info.get("borrow_id"), 9)) {
+				return new MsgBean(0, "确认借阅成功").toReturn();
 			} else {
-				return "确认借阅失败";
+				return new MsgBean(1, "借阅失败").toReturn();
 			}
 		} catch (DuplicateKeyException e) {
-			return "该图书已被确认借阅";
+			return new MsgBean(1, "该图书已被确认借阅").toReturn();
 		} catch (Exception e1) {
 			log.error(e1);
-			return "异常错误，请检查";
-		}
-	}
-
-	/**
-	 * 删除借阅记录
-	 * 
-	 * @param borrowInfo
-	 * @return
-	 */
-	@RequestMapping(value = "/borrow", method = RequestMethod.DELETE)
-	@ResponseBody
-	public String deletBorrow(@RequestBody Map borrowInfo) {
-		if (userService.deletBorrow((String) borrowInfo.get("borrow_id"))) {
-			return "删除借阅成功";
-		} else {
-			return "删除借阅失败";
+			return new MsgBean(1, "异常错误，请检查").toReturn();
 		}
 	}
 
@@ -202,18 +200,25 @@ public class UserController {
 	 */
 	@RequestMapping(value = "/renew", method = RequestMethod.POST)
 	@ResponseBody
-	public String renew(@RequestBody Map borrowInfo) {
+	public String renew(@RequestParam String borrow_id) {
 		try {
-			if (bookService.renew((String) borrowInfo.get("borrow_id"))) {
-				return "续借成功";
+			Map borrowMap = userService.searchBorrowDetails(borrow_id);
+			int days = OtherUtil.differentDays(OtherUtil.getDate((String) borrowMap.get("confirmtime")),
+					OtherUtil.getDate((String) borrowMap.get("returntime")));
+			if (days > 30) {
+				return new MsgBean(1, "同学，你的借阅超过2次啦～<br/>借阅次数≧2，将不能再续借啦！").toReturn();
+			}
+			String returnTime = OtherUtil.getDate(OtherUtil.getDate((String) borrowMap.get("confirmtime")), 45);
+			if (bookService.renew(returnTime, borrow_id)) {
+				return new MsgBean(0, "续借成功～<br/>还书日期推迟为：" + returnTime + "<br/>请及时归还书籍，逾期不还，将会扣除你的经验值哦～").toReturn();
 			} else {
-				return "续借失败";
+				return new MsgBean(1, "续借失败").toReturn();
 			}
 		} catch (DuplicateKeyException e) {
-			return "该图书已被确认续借";
+			return new MsgBean(1, "该图书已被确认续借").toReturn();
 		} catch (Exception e1) {
 			log.error(e1);
-			return "异常错误，请检查";
+			return new MsgBean(1, "异常错误，请检查").toReturn();
 		}
 	}
 
@@ -228,13 +233,45 @@ public class UserController {
 	public String searchBorrow(@RequestParam String user_id, @RequestParam int start, @RequestParam int limit) {
 		PageHelper.startPage(start, limit);
 		List allBooks = userService.searchBorrow(user_id);
-		PageInfo<Book> pageInfo = new PageInfo<Book>(allBooks);
+		PageInfo<Map> pageInfo = new PageInfo<Map>(allBooks);
 		String bookinfos = JSON.toJSONString(pageInfo);
 		return bookinfos;
 	}
 
 	/**
-	 * 根据ISBN保存图书
+	 * 查询是否可以根据书名推荐图书
+	 * 
+	 * @param userid
+	 * @param ISBN
+	 * @return
+	 */
+	@RequestMapping(value = "/ifCanIntroduction", method = RequestMethod.GET)
+	@ResponseBody
+	public String ifCanIntroduction(@RequestParam String name, @RequestParam String user_id) {
+		List<Book> books = bookService.searchBooks("name", null);
+		if (null != books) {
+			for (Book book : books) {
+				if (book.getTitle().equals("name")) {
+					// 自己添加推荐，不添加书籍
+					try {
+						userService.saveCommend("user_id", book, "", OtherUtil.getDate());
+						book.setSearch(1);
+					} catch (DuplicateKeyException e) {
+						return new MsgBean(1, "已有书籍").toReturn();
+					}
+				} else {
+					book.setSearch(0);
+				}
+			}
+			String bookinfos = JSON.toJSONString(books);
+			return bookinfos;
+		} else {
+			return new MsgBean(1, "暂无相似").toReturn();
+		}
+	}
+
+	/**
+	 * 查询是否可以根据书名推荐图书
 	 * 
 	 * @param userid
 	 * @param ISBN
@@ -242,18 +279,27 @@ public class UserController {
 	 */
 	@RequestMapping(value = "/wannaIntroduction", method = RequestMethod.POST)
 	@ResponseBody
-	public String saveBook(@RequestBody Map commendInfo) {
-		Map bookMap = HttpUtil.getBookInfo((String) commendInfo.get("ISBN"));
-		Book book = bookService.transMapToBook(bookMap);
-		if (bookService.saveBook(book) && bookService.saveBookStatus(book)) {
-			if (userService.saveCommend((String) commendInfo.get("referee_id"), book,
-					(String) commendInfo.get("reason"))) {
-				return "保存成功";
+	public String recommendBook(@RequestBody Map info) {
+		Book newBook = new Book();
+		newBook.setBookId(OtherUtil.getUUID());
+		newBook.setTitle((String) info.get("name"));
+		newBook.setStatus("0");
+		if (bookService.saveBook(newBook)) {
+			if (bookService.saveBookStatus(newBook)) {
+				if (userService.saveCommend((String) info.get("user_id"), newBook, (String) info.get("reason"),
+						OtherUtil.getDate())) {
+					return new MsgBean(0, "推荐成功").toReturn();
+				} else {
+					bookService.deleteBookStatus(newBook.getBookId());
+					bookService.deleteBook(newBook.getBookId());
+					return new MsgBean(1, "推荐失败").toReturn();
+				}
 			} else {
-				return "保存失败";
+				bookService.deleteBook(newBook.getBookId());
+				return new MsgBean(1, "保存图书状态失败").toReturn();
 			}
 		} else {
-			return "保存失败";
+			return new MsgBean(1, "保存图书失败").toReturn();
 		}
 	}
 
@@ -266,10 +312,11 @@ public class UserController {
 	@RequestMapping(value = "/like", method = RequestMethod.POST)
 	@ResponseBody
 	public String likeBook(@RequestBody Map likeInfo) {
-		if (bookService.likeBook((String) likeInfo.get("ISBN"), (String) likeInfo.get("user_id"), 1)) {
-			return "点赞成功";
+		if (userService.likeBook((String) likeInfo.get("ISBN"), (String) likeInfo.get("user_id"), 1,
+				OtherUtil.getDate())) {
+			return new MsgBean(0, "点赞成功").toReturn();
 		} else {
-			return "点赞失败";
+			return new MsgBean(1, "点赞失败").toReturn();
 		}
 
 	}
@@ -280,13 +327,37 @@ public class UserController {
 	 * @param wannaInfo
 	 * @return
 	 */
-	@RequestMapping(value = "/wannaBook", method = RequestMethod.POST)
+	@RequestMapping(value = "/wannabook", method = RequestMethod.POST)
 	@ResponseBody
-	public String wannaBook(@RequestBody Map wannaInfo) {
-		if (bookService.likeBook((String) wannaInfo.get("ISBN"), (String) wannaInfo.get("user_id"), 2)) {
-			return "成功添加想看";
+	public String wannaBook(@RequestBody Map wanna_info) {
+		if (userService.likeBook((String) wanna_info.get("ISBN"), (String) wanna_info.get("user_id"), 2,
+				OtherUtil.getDate())) {
+			return new MsgBean(0, "成功添加想看").toReturn();
 		} else {
-			return "添加失败";
+			return new MsgBean(1, "添加失败").toReturn();
+		}
+	}
+
+	/**
+	 * 添加评论
+	 * 
+	 * @param comment
+	 * @return
+	 */
+	@RequestMapping(value = "/savecoment", method = RequestMethod.POST)
+	@ResponseBody
+	public String saveComent(@RequestBody Map comment) {
+		// 先升级借阅信息，改为已评价（4）
+		if (bookService.updateBorrow((String) comment.get("borrow_id"), 4)) {
+			if (userService.saveBookComments((String) comment.get("ISBN"), (String) comment.get("user_id"),
+					(String) comment.get("content"), OtherUtil.getDate(),
+					Integer.parseInt((String) comment.get("score")))) {
+				return new MsgBean(0, "成功添加评论").toReturn();
+			} else {
+				return new MsgBean(1, "添加失败").toReturn();
+			}
+		} else {
+			return new MsgBean(1, "更新借阅状态为已评价失败").toReturn();
 		}
 	}
 
@@ -303,20 +374,88 @@ public class UserController {
 	public String getVerification(@RequestParam String user_id) {
 		String verification = OtherUtil.getRandomCode(8);
 		User user = userService.getUserByUserId(user_id);
-		// 发生邮件
+		// 发送邮件
 		if (null != user.getEmail()) {
 			try {
 				EmailUtils.sendHtmlMail(user.getEmail(), "验证码", user_id + "，您的验证码是:" + verification + "。");
 			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("发送邮件编码错误", e);
 			} catch (MessagingException e) {
-				log.error(e);
+				log.error("发送邮件异常", e);
 			}
 			return verification;
 		} else {
-			return "请保存邮箱信息后再试";
+			return new MsgBean(1, "请保存邮箱信息后再试").toReturn();
 		}
 	}
 
+	/**
+	 * 查询榜单
+	 * 
+	 * @param type
+	 * @param start
+	 * @param limit
+	 * @return
+	 */
+	@RequestMapping(value = "/getList", method = RequestMethod.GET)
+	@ResponseBody
+	public String getList(@RequestParam int type, @RequestParam int start, @RequestParam int limit) {
+		List<Map> result = ListCache.getListCache().getList(type);
+		// List<Map> result =
+		// OtherUtil.getRightInfos(ListCache.getListCache().getList(type),
+		// start, limit);
+		String infos = JSON.toJSONString(result);
+		return infos;
+	}
+
+	/**
+	 * 基于用户标识的头像上传
+	 * 
+	 * @param file
+	 *            图片
+	 * @param userId
+	 *            用户标识
+	 * @return
+	 */
+	@RequestMapping(value = "/fileUpload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public String fileUpload(@RequestParam("file") MultipartFile file, @RequestParam("user_id") Integer user_id) {
+		String result;
+		if (!file.isEmpty()) {
+			if (file.getContentType().contains("image")) {
+				try {
+					// String temp = "images" + File.separator + "upload" +
+					// File.separator;
+					// 获取图片的文件名
+					// String fileName = file.getOriginalFilename();
+					// 获取图片的扩展名
+					// String extensionName =
+					// StringUtils.substringAfter(fileName, ".");
+					// 新的图片文件名 = 获取时间戳+"."图片扩展名
+					String newFileName = user_id + ".jpg";
+					// 文件路径
+					String filePath = webUploadPath;
+
+					File dest = new File(filePath, newFileName);
+					if (!dest.getParentFile().exists()) {
+						dest.getParentFile().mkdirs();
+					}
+					// 上传到指定目录
+					file.transferTo(dest);
+
+					// 将图片流转换进行BASE64加码
+					// BASE64Encoder encoder = new BASE64Encoder();
+					// String data = encoder.encode(file.getBytes());
+
+					return new MsgBean(0, "上传成功!").toReturn();
+				} catch (IOException e) {
+					result = "上传失败!";
+				}
+			} else {
+				result = "上传的文件不是图片类型，请重新上传!";
+			}
+			return new MsgBean(1, result).toReturn();
+		} else {
+			return new MsgBean(1, "上传失败，请选择要上传的图片!").toReturn();
+		}
+	}
 }

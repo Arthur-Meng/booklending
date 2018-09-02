@@ -26,12 +26,25 @@ public interface UserMapper {
 	public User getUserByUserId(@Param("userId") String userId);
 
 	/**
+	 * 获取全部用户
+	 * 
+	 * @return
+	 */
+	public List getAllUser();
+
+	/**
 	 * 用户注册
 	 * 
 	 * @param user
 	 * @return
 	 */
 	public Boolean saveUser(@Param("user") User user);
+
+	/**
+	 * 更新用户
+	 * 
+	 */
+	public Boolean updateUser(@Param("user") User user);
 
 	/**
 	 * 用户借书
@@ -64,7 +77,7 @@ public interface UserMapper {
 	 * @param borrowId
 	 * @return
 	 */
-	public Boolean deletBorrow(@Param("borrowId") String borrowId);
+	public Boolean deleteBorrow(@Param("borrowId") String borrowId);
 
 	/**
 	 * 推荐
@@ -72,6 +85,23 @@ public interface UserMapper {
 	 * @param userId,book,reason
 	 * @return
 	 */
-	public Boolean saveCommend(@Param("userId") String userId, @Param("book") Book book,
-			@Param("reason") String reason);
+	public Boolean saveCommend(@Param("userId") String userId, @Param("book") Book book, @Param("reason") String reason,
+			@Param("date") String date);
+
+	/**
+	 * 获取全部在借信息
+	 * 
+	 * @param
+	 * @return
+	 */
+	public List searchAllBorrow(@Param("status") int status);
+
+	/**
+	 * 更新借阅信息
+	 * 
+	 * @param borrowId
+	 * @param status
+	 */
+	public void updateBorrow(@Param("borrowId") String borrowId, @Param("status") int status,
+			@Param("returnTime") String returnTime);
 }

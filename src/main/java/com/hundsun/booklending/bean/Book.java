@@ -40,20 +40,23 @@ public class Book {
 	// 电子书价格
 	public String ebook_price;
 	// 图书状态（0表示已推荐，1表示可借阅状态，2表示不可借阅状态,9表示已经过期）
-	// 借阅状态（0表示已预定，1表示确认借阅（待借），2表示已借阅状态,3表示需要归还状态，4表示已经归还状态,9表示取消）
+	// 借阅状态（0表示已过期，1表示待取书，2表示确认借阅（未还书），3表示已还书，4表示已经评价,8表示被动取消,9表示主动取消）
 	public String status;
 	// 添加时间
 	public String addTime;
-	// 是否新书
-	public Boolean ifNew;
-	// 喜欢的总数
+	// 总喜欢数
 	public int likeAll;
-	// 一年内的喜欢数
-	public int likeYear;
-	// 一月内的喜欢数
-	public int likeMouth;
-	// 一周内的喜欢数
-	public int likeWeek;
+	// 总想看数
+	public int wannaall;
+	// 总评论数
+	public int commentall;
+	// 总评分
+	public int scoreall;
+	// 剩余
+	public int remain;
+	// 查询状态，0表示相似，1表示已有
+	public int search;
+	
 
 	/**
 	 * 获取标签数组
@@ -63,6 +66,22 @@ public class Book {
 	public String[] getTagsArray() {
 		if (null != this.tags) {
 			return this.tags.split(",");
+		} else {
+			return null;
+		}
+	}
+
+	public String[] getAuthorArray() {
+		if (null != this.author) {
+			return this.author.split(",");
+		} else {
+			return null;
+		}
+	}
+
+	public String[] getTranslatorArray() {
+		if (null != this.translator) {
+			return this.translator.split(",");
 		} else {
 			return null;
 		}

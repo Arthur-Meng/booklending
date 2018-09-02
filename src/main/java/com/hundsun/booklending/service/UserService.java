@@ -24,12 +24,27 @@ public interface UserService {
 	public User getUserByUserId(String userId);
 
 	/**
+	 * 获取全部用户
+	 * 
+	 * @return
+	 */
+	public List getAllUser();
+
+	/**
 	 * 保存用户
 	 * 
 	 * @param user
 	 * @return
 	 */
 	public boolean saveUser(User user) throws DuplicateKeyException;
+
+	/**
+	 * 更新用户
+	 * 
+	 * @param user
+	 * @return
+	 */
+	public boolean updateUser(User user);
 
 	/**
 	 * 借阅
@@ -61,14 +76,38 @@ public interface UserService {
 	 * @param borrowId
 	 * @return
 	 */
-	public boolean deletBorrow(String borrowId);
+	public boolean deleteBorrow(String borrowId);
 
 	/**
 	 * 推荐
 	 * 
-	 * @param borrowId
+	 * @param userId
+	 * @param book
+	 * @param reason
+	 * @param date
 	 * @return
 	 */
-	public boolean saveCommend(String userId, Book book, String reason);
+	public boolean saveCommend(String userId, Book book, String reason, String date) throws DuplicateKeyException;
 
+	/**
+	 * 评论
+	 * 
+	 * @param ISBN
+	 * @param userId
+	 * @param content
+	 * @param date
+	 * @param score
+	 * @return
+	 */
+	public boolean saveBookComments(String ISBN, String userId, String content, String date, int score);
+
+	/**
+	 * 点赞图书/想看图书
+	 * 
+	 * @param ISBN
+	 * @param userId
+	 * @param status
+	 * @return
+	 */
+	public Boolean likeBook(String ISBN, String userId, int status, String date);
 }

@@ -21,6 +21,15 @@
 		(#{book.bookId,jdbcType=VARCHAR},#{book.status,jdbcType=VARCHAR},#{book.addTime,jdbcType=VARCHAR})
 	</insert>
 
+	<select id="getAllVoidBooks" resultType="Book">
+		select
+		b.*,s.*
+		from book b
+		left join bookstatus s
+		on b.bookid=s.bookid
+		where s.status=0
+	</select>
+
 	<select id="getAllBooks" resultType="Book">
 		select
 		b.*,s.*
@@ -28,11 +37,26 @@
 		left join bookstatus s
 		on b.bookid=s.bookid
 		<if test="ifNew!=null">
-			where s.ifNew=1
+			and s.ifnew=1
 		</if>
 		<if test="status!=null">
 			where s.status!=#{status}
 		</if>
+		<if test="ifOrder!=null">
+			order by s.scoreall DESC
+		</if>
+		<if test="byTime!=null">
+			order by s.addtime DESC
+		</if>
+	</select>
+
+	<select id="getBookById" resultType="Book">
+		select
+		b.*
+		from book
+		b
+		where
+		b.bookid=#{bookId,jdbcType=VARCHAR}
 	</select>
 
 	<select id="searchBooks" resultType="Book">
@@ -43,52 +67,78 @@
 		on b.bookid=s.bookid
 		where b.title like concat(concat('%',#{title,jdbcType=VARCHAR}),'%')
 		<if test="ifNew!=null">
-			and s.ifNew=1
+			and s.ifnew=1
 		</if>
 	</select>
 
 	<select id="searchBookDetails" resultType="Book">
 		select
-		b.*,s.*
-		from book
-		b
-		left join bookstatus s
-		on b.bookid=s.bookid
+		b.*
+		from book b
 		where
 		b.ISBN=#{ISBN,jdbcType=VARCHAR}
 	</select>
 
-	<select id="searchBookComments" resultType="Comment">
+	<insert id="saveBookComments">
+		insert into bookstatus
+		(ISBN,userid,content,date,score)
+		value
+		(#{ISBN,jdbcType=VARCHAR},#{userId,jdbcType=VARCHAR},#{content,jdbcType=VARCHAR},#{date,jdbcType=VARCHAR},#{score})
+	</insert>
+
+	<select id="searchBookComments" resultType="java.util.Map">
 		select
 		c.*
-		from comment
-		c
+		from comment c
 		left join book b
-		on b.bookid=c.bookid
-		where
-		b.ISBN=#{ISBN,jdbcType=VARCHAR}
+		on b.ISBN=c.ISBN
+		<if test="ISBN!=null">
+			where
+			b.ISBN=#{ISBN,jdbcType=VARCHAR}
+		</if>
 	</select>
-	
-	<select id="searchCommendBooks" resultType="java.util.Map">
+
+	<select id="searchUserCommendBooks" resultType="java.util.Map">
 		select
 		b.*,c.*
-		from book b
+		from
+		book b
 		left join commend c
-		on b.bookid=c.bookid
+		on b.ISBN=c.ISBN
 		where
 		c.userid=#{userId,jdbcType=VARCHAR}
 	</select>
 
+	<select id="searchCommendBooks" resultType="java.util.Map">
+		select
+		b.*,c.*
+		from
+		book b
+		left join commend c
+		on b.ISBN=c.ISBN
+		where
+		c.userid!=#{userId,jdbcType=VARCHAR}
+	</select>
+
 	<insert id="likeBook">
 		insert into booklike
-		(bookid,userid,status)
-		select
-		b.bookid,#{userId,jdbcType=VARCHAR},#{status}
-		from book b
-		where
-		b.ISBN=#{ISBN,jdbcType=VARCHAR}
+		(ISBN,userid,status,date)
+		value
+		(#{ISBN,jdbcType=VARCHAR},#{userId,jdbcType=VARCHAR},#{status},#{date,jdbcType=VARCHAR})
 	</insert>
-	
+
+	<select id="searchLikeBook" resultType="java.util.Map">
+		select
+		bl.*
+		from
+		book b
+		left
+		join booklike bl
+		on b.ISBN=bl.ISBN
+		where
+		bl.status=#{status}
+	</select>
+
 	<update id="updateBook">
 		update bookstatus bs
 		set bs.status=#{status}
@@ -96,19 +146,69 @@
 		bs.bookid=#{bookId,jdbcType=VARCHAR}
 	</update>
 
+	<select id="searchBookStatus" resultType="java.util.Map">
+		select
+		bs.*,b.*
+		from bookstatus bs
+		left
+		join book b
+		on
+		b.bookid=bs.bookid
+		<if test="ISBN!=null">
+			where
+			b.ISBN=#{ISBN,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<update id="updateBookStatus">
+		update bookstatus bs
+		set
+		<if test="bookStatus.likeall!=null">
+			likeall=#{bookStatus.likeall,jdbcType=VARCHAR},
+		</if>
+		<if test="bookStatus.wannaall!=null">
+			wannaall=#{bookStatus.wannaall,jdbcType=VARCHAR},
+		</if>
+		<if test="bookStatus.commentall!=null">
+			commentall=#{bookStatus.commentall,jdbcType=VARCHAR},
+		</if>
+		<if test="bookStatus.scoreall!=null">
+			scoreall=#{bookStatus.scoreall,jdbcType=VARCHAR},
+		</if>
+		<if test="bookStatus.ifNew!=null">
+			ifnew=#{bookStatus.ifNew}
+		</if>
+		where
+		bs.bookid=#{bookStatus.bookId,jdbcType=VARCHAR}
+	</update>
+
 	<update id="updateBorrow">
 		update borrow br
-		set br.status=#{status}
+		set br.borrowstatus=#{status}
 		where
 		br.borrowid=#{borrowId,jdbcType=VARCHAR}
 	</update>
 
 	<update id="renew">
 		update borrow br
-		set br.renew="1"
+		set
+		br.returntime=#{returnTime,jdbcType=VARCHAR},
+		br.renew=1
 		where
 		br.borrowid=#{borrowId,jdbcType=VARCHAR}
 	</update>
+
+	<delete id="deleteBook">
+		delete from book
+		where
+		bookid=#{bookId}
+	</delete>
+
+	<delete id="deleteBookStatus">
+		delete from bookstatus
+		where
+		bookid=#{bookId}
+	</delete>
 
 
 </mapper>

@@ -15,7 +15,15 @@ public class UserMapperImpl implements UserMapper {
 		return null;
 	}
 
+	public List getAllUser() {
+		return null;
+	}
+
 	public Boolean saveUser(User user) {
+		return null;
+	}
+
+	public Boolean updateUser(User user) {
 		return null;
 	}
 
@@ -31,12 +39,18 @@ public class UserMapperImpl implements UserMapper {
 		return null;
 	}
 
-	public Boolean deletBorrow(@Param("borrowId") String borrowId) {
+	public Boolean deleteBorrow(String borrowId) {
 		return null;
 	}
 
-	public Boolean saveCommend(String userId, Book book, String reason) {
+	public Boolean saveCommend(String userId, Book book, String reason, String date) {
 		return null;
 	}
 
+	public List searchAllBorrow(int status) {
+		return null;
+	}
+
+	public void updateBorrow(String borrowId, int status,String returnTime) {
+	}
 }

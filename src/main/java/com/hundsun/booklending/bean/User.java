@@ -28,7 +28,7 @@ public class User {
 	// 年登陆数
 	public int yearLoginNum;
 	// 月登陆数
-	public int mouthLoginNum;
+	public int monthLoginNum;
 	// 周登陆数
 	public int weekLoginNum;
 
@@ -69,7 +69,11 @@ public class User {
 	 * @return
 	 */
 	public String[] getPreferenceArray() {
-		return this.preference.split(",");
+		if (null != this.preference) {
+			return this.preference.split(",");
+		} else {
+			return null;
+		}
 	}
 
 }

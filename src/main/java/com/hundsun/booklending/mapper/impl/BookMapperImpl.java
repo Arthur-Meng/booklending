@@ -1,8 +1,7 @@
 package com.hundsun.booklending.mapper.impl;
 
 import java.util.List;
-
-import org.apache.ibatis.annotations.Param;
+import java.util.Map;
 
 import com.hundsun.booklending.bean.Book;
 import com.hundsun.booklending.mapper.BookMapper;
@@ -17,7 +16,15 @@ public class BookMapperImpl implements BookMapper {
 		return null;
 	}
 
-	public List getAllBooks(Boolean ifNew, int status) {
+	public List getAllVoidBooks() {
+		return null;
+	}
+
+	public List getAllBooks(Boolean ifNew, int status, Boolean ifOrder, Boolean byTime) {
+		return null;
+	}
+
+	public Book getBookById(String bookId) {
 		return null;
 	}
 
@@ -29,7 +36,19 @@ public class BookMapperImpl implements BookMapper {
 		return null;
 	}
 
-	public Book searchBookDetails(String ISBN) {
+	public List searchBookStatus(String ISBN) {
+		return null;
+	}
+
+	public Boolean updateBookStatus(Map bookStatus) {
+		return null;
+	}
+
+	public List searchBookDetails(String ISBN) {
+		return null;
+	}
+
+	public Boolean saveBookComments(String ISBN, String userId, String content, String date, int score) {
 		return null;
 	}
 
@@ -37,11 +56,23 @@ public class BookMapperImpl implements BookMapper {
 		return null;
 	}
 
+	public List searchBookComments() {
+		return null;
+	}
+
 	public List searchCommendBooks(String userId) {
 		return null;
 	}
 
-	public Boolean likeBook(String ISBN, String userId, int status) {
+	public List searchUserCommendBooks(String userId) {
+		return null;
+	}
+
+	public Boolean likeBook(String ISBN, String userId, int status, String date) {
+		return null;
+	}
+
+	public List searchLikeBook(int status) {
 		return null;
 	}
 
@@ -53,7 +84,16 @@ public class BookMapperImpl implements BookMapper {
 		return null;
 	}
 
-	public Boolean renew(String borrowId) {
+	public Boolean renew(String returnTime, String borrowId) {
 		return null;
 	}
+
+	public Boolean deleteBook(String bookId) {
+		return null;
+	}
+
+	public Boolean deleteBookStatus(String borrowId) {
+		return null;
+	}
+
 }

@@ -3,6 +3,7 @@ package com.hundsun.booklending.service;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.annotations.Param;
 import org.springframework.dao.DuplicateKeyException;
 
 import com.hundsun.booklending.bean.Book;
@@ -10,7 +11,7 @@ import com.hundsun.booklending.bean.Book;
 /**
  * 图书服务类
  * 
- * @author mengjwa
+ * @author mengjw
  *
  */
 public interface BookService {
@@ -30,6 +31,13 @@ public interface BookService {
 	public List getAllBooks();
 
 	/**
+	 * 获取全部没买的图书
+	 * 
+	 * @return
+	 */
+	public List getAllVoidBooks();
+
+	/**
 	 * 获取全部新书
 	 * 
 	 * @return
@@ -42,6 +50,20 @@ public interface BookService {
 	 * @return
 	 */
 	public List getAddedBooks();
+
+	/**
+	 * 获取全部点赞数据
+	 * 
+	 * @return
+	 */
+	public List searchLikeBook();
+
+	/**
+	 * 获取全部想看数据
+	 * 
+	 * @return
+	 */
+	public List searchWannaBook();
 
 	/**
 	 * 保存图书
@@ -58,6 +80,14 @@ public interface BookService {
 	 * @return
 	 */
 	public boolean saveBookStatus(Book book);
+
+	/**
+	 * 查找图书状态
+	 * 
+	 * @param ISBN
+	 * @return
+	 */
+	public List searchBookStatus(String ISBN);
 
 	/**
 	 * 查找图书
@@ -84,6 +114,14 @@ public interface BookService {
 	public List searchBookComments(String ISBN);
 
 	/**
+	 * 获取全部图书评论
+	 * 
+	 * @param ISBN
+	 * @return
+	 */
+	public List searchBookComments();
+
+	/**
 	 * 查看推荐的列表
 	 * 
 	 * @param userId
@@ -92,14 +130,12 @@ public interface BookService {
 	public List searchCommendBooks(String userId);
 
 	/**
-	 * 点赞图书/想看图书
+	 * 查看自己推荐的列表
 	 * 
-	 * @param ISBN
 	 * @param userId
-	 * @param status
 	 * @return
 	 */
-	public Boolean likeBook(String ISBN, String userId, int status);
+	public List searchUserCommendBooks(String userId);
 
 	/**
 	 * 更新图书状态
@@ -123,10 +159,11 @@ public interface BookService {
 	/**
 	 * 续借
 	 * 
+	 * @param returnTime
 	 * @param borrowId
 	 * @return
 	 */
-	public Boolean renew(String borrowId);
+	public Boolean renew(String returnTime, String borrowId);
 
 	/**
 	 * 转变为图书类
@@ -135,4 +172,20 @@ public interface BookService {
 	 * @return
 	 */
 	public Book transMapToBook(Map map);
+
+	/**
+	 * 删除图书
+	 * 
+	 * @param borrowId
+	 * @return
+	 */
+	public Boolean deleteBook(@Param("bookId") String bookId);
+
+	/**
+	 * 删除图书
+	 * 
+	 * @param borrowId
+	 * @return
+	 */
+	public Boolean deleteBookStatus(@Param("borrowId") String borrowId);
 }
