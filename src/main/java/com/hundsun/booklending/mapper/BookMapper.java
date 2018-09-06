@@ -65,7 +65,15 @@ public interface BookMapper {
 	 * 
 	 * @return
 	 */
-	public List searchBooks(@Param("title") String ISBN, @Param("ifNew") Boolean ifNew);
+	public List searchBooks(@Param("title") String title, @Param("ifNew") Boolean ifNew);
+
+	/**
+	 * 获取全部图书信息
+	 * 
+	 * @param title
+	 * @return
+	 */
+	public List searchAllBookInfo(@Param("title") String title);
 
 	/**
 	 * 通过ISBN获取图书状态
@@ -143,11 +151,19 @@ public interface BookMapper {
 			@Param("date") String date);
 
 	/**
-	 * 查询全部点赞图书/想要图书，状态1为点赞，2为想看
+	 * 删除点赞图书/想要图书，状态1为点赞，2为想看
 	 * 
 	 * @return
 	 */
-	public List searchLikeBook(@Param("status") int status);
+	public Boolean deleteBookLike(@Param("ISBN") String ISBN, @Param("userId") String userId,
+			@Param("status") int status);
+
+	/**
+	 * 查询用户点赞图书/想要图书，状态1为点赞，2为想看
+	 * 
+	 * @return
+	 */
+	public List searchLikeBook(@Param("status") int status, @Param("ISBN") String ISBN, @Param("userId") String userId);
 
 	/**
 	 * 更新图书状态

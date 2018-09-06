@@ -69,7 +69,8 @@ public interface UserMapper {
 	 * @param userId
 	 * @return
 	 */
-	public List searchBorrow(@Param("userId") String userId);
+	public List searchBorrow(@Param("userId") String userId, @Param("ISBN") String ISBN, @Param("name") String name,
+			@Param("status") int status);
 
 	/**
 	 * 删除借书记录
@@ -82,7 +83,10 @@ public interface UserMapper {
 	/**
 	 * 推荐
 	 * 
-	 * @param userId,book,reason
+	 * @param userId
+	 * @param book
+	 * @param reason
+	 * @param date
 	 * @return
 	 */
 	public Boolean saveCommend(@Param("userId") String userId, @Param("book") Book book, @Param("reason") String reason,
@@ -102,6 +106,35 @@ public interface UserMapper {
 	 * @param borrowId
 	 * @param status
 	 */
-	public void updateBorrow(@Param("borrowId") String borrowId, @Param("status") int status,
+	public Boolean updateBorrow(@Param("borrowId") String borrowId, @Param("status") int status,
 			@Param("returnTime") String returnTime);
+
+	/**
+	 * 保存喜欢推荐
+	 * 
+	 * @param bookId
+	 * @param userId
+	 * @param date
+	 * @return
+	 */
+	public Boolean saveLikeCommend(@Param("bookId") String bookId, @Param("userId") String userId,
+			@Param("date") String date);
+
+	/**
+	 * 查询喜欢推荐
+	 * 
+	 * @param bookId
+	 * @param userId
+	 * @return
+	 */
+	public Map searchLikeCommend(@Param("bookId") String bookId, @Param("userId") String userId);
+
+	/**
+	 * 更新推荐
+	 * 
+	 * @param bookId
+	 * @param userId
+	 * @return
+	 */
+	public Boolean updateCommend(@Param("bookId") String bookId, @Param("userId") String userId);
 }

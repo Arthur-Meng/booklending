@@ -57,6 +57,13 @@ public interface BookService {
 	 * @return
 	 */
 	public List searchLikeBook();
+	
+	/**
+	 * 获取用户
+	 * 
+	 * @return
+	 */
+	public List searchLikeBook(String ISBN,String userId);
 
 	/**
 	 * 获取全部想看数据
@@ -96,6 +103,14 @@ public interface BookService {
 	 * @return
 	 */
 	public List searchBooks(String title, Boolean ifNew);
+	
+	/**
+	 * 获取全部图书信息
+	 * 
+	 * @param title
+	 * @return
+	 */
+	public List searchAllBookInfo( String title);
 
 	/**
 	 * 查看细节图书

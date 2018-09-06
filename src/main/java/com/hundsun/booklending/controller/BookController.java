@@ -166,9 +166,16 @@ public class BookController {
 	 */
 	@RequestMapping(value = "/details", method = RequestMethod.GET)
 	@ResponseBody
-	public String searchBookDetails(@RequestParam String ISBN) {
+	public String searchBookDetails(@RequestParam String ISBN, @RequestParam String user_id) {
 		// start是当前页数，limit为每页页数
 		Book searchBooks = bookService.searchBookDetails(ISBN);
+		// 查询是否已经点赞
+		List likesList = bookService.searchLikeBook(ISBN, user_id);
+		if (null != likesList && likesList.size() > 0) {
+			searchBooks.setIfLike(1);
+		} else {
+			searchBooks.setIfLike(0);
+		}
 		return JsonUtil.convertBean2Json(searchBooks);
 	}
 

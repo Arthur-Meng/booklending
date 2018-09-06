@@ -54,13 +54,11 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-	public boolean borrow(String userId, String bookId) {
+	public boolean borrow(String userId, String bookId, String borrowId) {
 		// 保存借阅信息且更新图书状态
-		String borrowId = OtherUtil.getUUID();
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd");
 		String dateString = df.format(new Date());
-		if (userMapper.borrow(borrowId, userId, bookId, dateString, 1)
-				&& booService.updateBook(bookId, 2)) {
+		if (userMapper.borrow(borrowId, userId, bookId, dateString, 1) && booService.updateBook(bookId, 2)) {
 			return true;
 		} else {
 			return false;
@@ -71,8 +69,8 @@ public class UserServiceImpl implements UserService {
 		return userMapper.searchBorrowDetails(borrowId);
 	}
 
-	public List searchBorrow(String userId) {
-		return userMapper.searchBorrow(userId);
+	public List searchBorrow(String userId, String ISBN, String name, int status) {
+		return userMapper.searchBorrow(userId, ISBN, name, status);
 	}
 
 	public boolean deleteBorrow(String borrowId) {
@@ -95,10 +93,23 @@ public class UserServiceImpl implements UserService {
 		if (bookMapper.saveBookComments(ISBN, userId, content, date, score)) {
 			List<Map> books = bookMapper.searchBookStatus(ISBN);
 			// 计算评分
-			int nums = bookMapper.searchBookComments(ISBN).size();
-			double scoreall = (nums * Double.parseDouble((String) books.get(0).get("scoreall")) + score) / nums + 1;
+			double scoreall = 0;
+			if (null != books) {
+				int nums = bookMapper.searchBookComments(ISBN).size();
+				if (null != books.get(0).get("scoreall")) {
+					scoreall = (nums * Double.parseDouble((String) books.get(0).get("scoreall")) + score) / nums + 1;
+				} else {
+					scoreall = new Double(score).doubleValue();
+				}
+			} else {
+				scoreall = new Double(score).doubleValue();
+			}
 			for (Map book : books) {
-				book.put("commentall", Integer.parseInt((String) book.get("commentall")) + 1);
+				if (null != book.get("commentall")) {
+					book.put("commentall", Integer.parseInt((String) book.get("commentall")) + 1);
+				} else {
+					book.put("commentall", 1);
+				}
 				book.put("scoreall", scoreall);
 				bookMapper.updateBookStatus(book);
 			}
@@ -113,9 +124,18 @@ public class UserServiceImpl implements UserService {
 			List<Map> books = bookMapper.searchBookStatus(ISBN);
 			for (Map book : books) {
 				if (status == 1) {
-					book.put("likeall", Integer.parseInt((String) book.get("likeall")) + 1);
+					if (book.get("likeall") != null) {
+						book.put("likeall", (int) book.get("likeall") + 1);
+					} else {
+						book.put("likeall", 1);
+					}
+
 				} else {
-					book.put("wannaall", Integer.parseInt((String) book.get("wannaall")) + 1);
+					if (book.get("wannaall") != null) {
+						book.put("wannaall", (int) book.get("wannaall") + 1);
+					} else {
+						book.put("wannaall", 1);
+					}
 				}
 				bookMapper.updateBookStatus(book);
 			}
@@ -125,4 +145,19 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
+	public Boolean deleteBookLike(String ISBN, String userId, int status) {
+		return bookMapper.deleteBookLike(ISBN, userId, status);
+	}
+
+	public Boolean saveLikeCommend(String bookId, String userId, String date) {
+		return userMapper.saveLikeCommend(bookId, userId, date);
+	}
+
+	public Map searchLikeCommend(String bookId, String userId) {
+		return userMapper.searchLikeCommend(bookId, userId);
+	}
+
+	public Boolean updateCommend(String bookId, String userId) {
+		return userMapper.updateCommend(bookId, userId);
+	}
 }

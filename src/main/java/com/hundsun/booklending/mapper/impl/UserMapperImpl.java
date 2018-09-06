@@ -35,7 +35,7 @@ public class UserMapperImpl implements UserMapper {
 		return null;
 	}
 
-	public List searchBorrow(String userId) {
+	public List searchBorrow(String userId, String ISBN, String name, int status) {
 		return null;
 	}
 
@@ -51,6 +51,20 @@ public class UserMapperImpl implements UserMapper {
 		return null;
 	}
 
-	public void updateBorrow(String borrowId, int status,String returnTime) {
+	public Boolean updateBorrow(String borrowId, int status, String returnTime) {
+		return null;
 	}
+
+	public Boolean saveLikeCommend(String bookId, String userId, String date) {
+		return null;
+	}
+
+	public Map searchLikeCommend(String bookId, String userId) {
+		return null;
+	}
+
+	public Boolean updateCommend(String bookId, String userId) {
+		return null;
+	}
+
 }

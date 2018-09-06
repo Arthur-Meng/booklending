@@ -50,7 +50,20 @@
 		join borrow br
 		on
 		b.bookid=br.bookid
-		where br.userid=#{userId}
+		where
+		br.status!=0
+		<if test="userId!=null">
+			and br.userid=#{userId}
+		</if>
+		<if test="ISBN!=null">
+			and b.ISBN=#{ISBN}
+		</if>
+		<if test="name!=null">
+			and b.title like concat(concat('%',#{name,jdbcType=VARCHAR}),'%')
+		</if>
+		<if test="status!=-1">
+			and br.status=#{status}
+		</if>
 	</select>
 
 	<delete id="deleteBorrow">
@@ -61,9 +74,9 @@
 
 	<insert id="saveCommend">
 		insert into commend
-		(userid,ISBN,reason,date)
+		(userid,bookid,reason,date)
 		value
-		(#{userId},#{book.ISBN},#{reason},#{date})
+		(#{userId},#{book.bookId},#{reason},#{date})
 	</insert>
 
 
@@ -108,4 +121,26 @@
 	</update>
 
 
+	<insert id="saveLikeCommend">
+		insert into likecommend
+		(bookid,userid,date)
+		value
+		(#{book.bookId},#{userId},#{date})
+	</insert>
+
+	<select id="searchLikeCommend" resultType="java.util.Map">
+		select lc.*
+		from
+		likecommend
+		where
+		lc.bookid=#{bookId} and lc.userid=#{userId}
+	</select>
+
+	<update id="updateCommend">
+		update commend c
+		set
+		c.like=c.like+1
+		where
+		c.bookid=#{bookId} and c.userid=#{userId}
+	</update>
 </mapper>

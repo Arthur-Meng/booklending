@@ -54,9 +54,10 @@ public class Book {
 	public int scoreall;
 	// 剩余
 	public int remain;
-	// 查询状态，0表示相似，1表示已有
-	public int search;
-	
+	//是否喜欢
+	public int ifLike;
+	//过期时间,-99表示待取书
+	public int timeout;
 
 	/**
 	 * 获取标签数组

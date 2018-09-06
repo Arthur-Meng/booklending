@@ -70,17 +70,31 @@
 			and s.ifnew=1
 		</if>
 	</select>
+	
+	<select id="searchAllBookInfo" resultType="java.util.Map">
+		select
+		b.*,s.*,c.*
+		from book b
+		left join bookstatus s
+		on b.bookid=s.bookid
+		left join commend c
+		on b.bookid=c.bookid
+		where b.title like concat(concat('%',#{title,jdbcType=VARCHAR}),'%')
+	</select>
 
 	<select id="searchBookDetails" resultType="Book">
 		select
-		b.*
-		from book b
+		b.*,bs.*
+		from
+		book b
+		left join bookstatus bs
+		on b.bookid=bs.bookid
 		where
 		b.ISBN=#{ISBN,jdbcType=VARCHAR}
 	</select>
 
 	<insert id="saveBookComments">
-		insert into bookstatus
+		insert into comment
 		(ISBN,userid,content,date,score)
 		value
 		(#{ISBN,jdbcType=VARCHAR},#{userId,jdbcType=VARCHAR},#{content,jdbcType=VARCHAR},#{date,jdbcType=VARCHAR},#{score})
@@ -104,7 +118,7 @@
 		from
 		book b
 		left join commend c
-		on b.ISBN=c.ISBN
+		on b.bookid=c.bookid
 		where
 		c.userid=#{userId,jdbcType=VARCHAR}
 	</select>
@@ -115,7 +129,7 @@
 		from
 		book b
 		left join commend c
-		on b.ISBN=c.ISBN
+		on b.bookid=c.bookid
 		where
 		c.userid!=#{userId,jdbcType=VARCHAR}
 	</select>
@@ -127,6 +141,13 @@
 		(#{ISBN,jdbcType=VARCHAR},#{userId,jdbcType=VARCHAR},#{status},#{date,jdbcType=VARCHAR})
 	</insert>
 
+	<delete id="deleteBookLike">
+		delete from booklike
+		where
+		userid=#{userId,jdbcType=VARCHAR} and ISBN=#{ISBN,jdbcType=VARCHAR}
+		and status=#{status}
+	</delete>
+
 	<select id="searchLikeBook" resultType="java.util.Map">
 		select
 		bl.*
@@ -137,6 +158,12 @@
 		on b.ISBN=bl.ISBN
 		where
 		bl.status=#{status}
+		<if test="ISBN!=null">
+			and bl.ISBN=#{ISBN,jdbcType=VARCHAR}
+		</if>
+		<if test="userId!=null">
+			and bl.userid=#{userId,jdbcType=VARCHAR}
+		</if>
 	</select>
 
 	<update id="updateBook">
@@ -162,24 +189,25 @@
 
 	<update id="updateBookStatus">
 		update bookstatus bs
-		set
-		<if test="bookStatus.likeall!=null">
-			likeall=#{bookStatus.likeall,jdbcType=VARCHAR},
-		</if>
-		<if test="bookStatus.wannaall!=null">
-			wannaall=#{bookStatus.wannaall,jdbcType=VARCHAR},
-		</if>
-		<if test="bookStatus.commentall!=null">
-			commentall=#{bookStatus.commentall,jdbcType=VARCHAR},
-		</if>
-		<if test="bookStatus.scoreall!=null">
-			scoreall=#{bookStatus.scoreall,jdbcType=VARCHAR},
-		</if>
-		<if test="bookStatus.ifNew!=null">
-			ifnew=#{bookStatus.ifNew}
-		</if>
+		<set>
+			<if test="bookStatus.likeall!=null">
+				likeall=#{bookStatus.likeall},
+			</if>
+			<if test="bookStatus.wannaall!=null">
+				wannaall=#{bookStatus.wannaall},
+			</if>
+			<if test="bookStatus.commentall!=null">
+				commentall=#{bookStatus.commentall},
+			</if>
+			<if test="bookStatus.scoreall!=null">
+				scoreall=#{bookStatus.scoreall},
+			</if>
+			<if test="bookStatus.ifNew!=null">
+				ifnew=#{bookStatus.ifNew},
+			</if>
+		</set>
 		where
-		bs.bookid=#{bookStatus.bookId,jdbcType=VARCHAR}
+		bs.bookid=#{bookStatus.bookid}
 	</update>
 
 	<update id="updateBorrow">
@@ -209,6 +237,5 @@
 		where
 		bookid=#{bookId}
 	</delete>
-
 
 </mapper>

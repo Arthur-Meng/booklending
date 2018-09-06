@@ -11,18 +11,11 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import com.hundsun.booklending.bean.Book;
-import com.hundsun.booklending.controller.BookController;
 import com.hundsun.booklending.mapper.BookMapper;
 import com.hundsun.booklending.mapper.UserMapper;
 import com.hundsun.booklending.service.BookService;
 import com.hundsun.booklending.util.OtherUtil;
-import com.mysql.jdbc.log.Log;
-
 import lombok.extern.log4j.Log4j;
 
 @Service
@@ -30,8 +23,6 @@ import lombok.extern.log4j.Log4j;
 public class BookServiceImpl implements BookService {
 	@Autowired
 	private BookMapper bookMapper;
-	@Autowired
-	private UserMapper userMapper;
 
 	public boolean saveBook(Book book) {
 		if (bookMapper.saveBook(book)) {
@@ -77,21 +68,33 @@ public class BookServiceImpl implements BookService {
 	}
 
 	public List searchLikeBook() {
-		return bookMapper.searchLikeBook(1);
+		return bookMapper.searchLikeBook(1, null, null);
+	}
+
+	public List searchLikeBook(String ISBN, String userId) {
+		return bookMapper.searchLikeBook(1, ISBN, userId);
 	}
 
 	public List searchWannaBook() {
-		return bookMapper.searchLikeBook(2);
+		return bookMapper.searchLikeBook(2, null, null);
 	}
 
 	public List searchBooks(String title, Boolean ifNew) {
 		return bookMapper.searchBooks(title, ifNew);
 	}
 
+	public List searchAllBookInfo(String title) {
+		return bookMapper.searchAllBookInfo(title);
+	}
+
 	public Book searchBookDetails(String ISBN) {
-		Book book = (Book) bookMapper.searchBookDetails(ISBN).get(0);
-		book.setBookId("");
-		return book;
+		List<Book> books = (List<Book>) bookMapper.searchBookDetails(ISBN);
+		for (Book book : books) {
+			if (null != book.getStatus() && book.getStatus().equals("1")) {
+				return book;
+			}
+		}
+		return books.get(0);
 	}
 
 	public List searchBookComments(String ISBN) {

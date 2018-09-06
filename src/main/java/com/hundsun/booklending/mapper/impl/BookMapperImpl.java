@@ -3,6 +3,8 @@ package com.hundsun.booklending.mapper.impl;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.annotations.Param;
+
 import com.hundsun.booklending.bean.Book;
 import com.hundsun.booklending.mapper.BookMapper;
 
@@ -33,6 +35,10 @@ public class BookMapperImpl implements BookMapper {
 	}
 
 	public List searchBooks(String title, Boolean ifNew) {
+		return null;
+	}
+	
+	public List searchAllBookInfo(String title) {
 		return null;
 	}
 
@@ -72,7 +78,11 @@ public class BookMapperImpl implements BookMapper {
 		return null;
 	}
 
-	public List searchLikeBook(int status) {
+	public Boolean deleteBookLike(String ISBN, String userId, int status) {
+		return null;
+	}
+
+	public List searchLikeBook(int status, String ISBN, String userId) {
 		return null;
 	}
 

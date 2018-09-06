@@ -1,8 +1,12 @@
 package com.hundsun.booklending.controller;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.javassist.expr.NewArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Controller;
@@ -19,6 +23,7 @@ import com.github.pagehelper.PageInfo;
 import com.hundsun.booklending.bean.Book;
 import com.hundsun.booklending.bean.MsgBean;
 import com.hundsun.booklending.service.BookService;
+import com.hundsun.booklending.service.CountService;
 import com.hundsun.booklending.service.UserService;
 import com.hundsun.booklending.util.HttpUtil;
 import com.hundsun.booklending.util.OtherUtil;
@@ -38,9 +43,21 @@ import lombok.extern.log4j.Log4j;
 public class AdminController {
 	@Autowired
 	private BookService bookService;
-
+	@Autowired
+	private CountService countService;
 	@Autowired
 	private UserService userService;
+
+	/**
+	 * 获取全部书籍数量
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/countBook", method = RequestMethod.GET)
+	@ResponseBody
+	public int countBook() {
+		return countService.countBook(null);
+	}
 
 	/**
 	 * 根据ISBN保存图书
@@ -54,7 +71,7 @@ public class AdminController {
 	public String saveBook(@RequestBody Map info) {
 		Map bookMap = HttpUtil.getBookInfo((String) info.get("ISBN"));
 		Book book = bookService.transMapToBook(bookMap);
-		// 查询有无类型书名但是没ISBN的信息，如果有就替换该信息
+		// 查询有无类似书名但是没ISBN的信息，如果有就替换该信息
 		List<Book> books = bookService.searchBooks(book.getTitle(), null);
 		if (null != books) {
 			for (Book b : books) {
@@ -94,9 +111,9 @@ public class AdminController {
 	@ApiOperation(value = "确认借书", notes = "确认借书")
 	@RequestMapping(value = "/confirmBorrow", method = RequestMethod.POST)
 	@ResponseBody
-	public String confirmBorrow(@RequestBody Map borrowInfo) {
+	public String confirmBorrow(@RequestBody Map borrow_info) {
 		try {
-			if (bookService.updateBorrow((String) borrowInfo.get("borrow_id"), 2)) {
+			if (bookService.updateBorrow((String) borrow_info.get("borrow_id"), 2)) {
 				return new MsgBean(0, "确认借阅成功").toReturn();
 			} else {
 				return new MsgBean(1, "确认借阅失败").toReturn();
@@ -108,7 +125,7 @@ public class AdminController {
 			return new MsgBean(1, "异常错误，请检查").toReturn();
 		}
 	}
-	
+
 	/**
 	 * 确认还书
 	 * 
@@ -118,9 +135,9 @@ public class AdminController {
 	@ApiOperation(value = "确认还书", notes = "确认还书")
 	@RequestMapping(value = "/confirmReturn", method = RequestMethod.POST)
 	@ResponseBody
-	public String confirmReturn(@RequestParam String borrow_id) {
+	public String confirmReturn(@RequestBody Map borrow_info) {
 		try {
-			if (bookService.updateBorrow("borrow_id", 3)) {
+			if (bookService.updateBorrow((String) borrow_info.get("borrow_id"), 3)) {
 				return new MsgBean(0, "确认还书成功").toReturn();
 			} else {
 				return new MsgBean(1, "确认还书失败").toReturn();
@@ -135,8 +152,8 @@ public class AdminController {
 
 	@RequestMapping(value = "/book", method = RequestMethod.DELETE)
 	@ResponseBody
-	public String deletBook(@RequestParam String bookId) {
-		if (bookService.deleteBook(bookId)) {
+	public String deletBook(@RequestParam String book_id) {
+		if (bookService.deleteBook(book_id)) {
 			return new MsgBean(0, "删除图书成功").toReturn();
 		} else {
 			return new MsgBean(1, "删除图书失败").toReturn();
@@ -145,8 +162,8 @@ public class AdminController {
 
 	@RequestMapping(value = "/bookStatus", method = RequestMethod.DELETE)
 	@ResponseBody
-	public String deletBookStatus(@RequestParam String bookId) {
-		if (bookService.deleteBookStatus(bookId)) {
+	public String deletBookStatus(@RequestParam String book_id) {
+		if (bookService.deleteBookStatus(book_id)) {
 			return new MsgBean(0, "删除图书状态成功").toReturn();
 		} else {
 			return new MsgBean(1, "删除图书状态失败").toReturn();
@@ -177,8 +194,8 @@ public class AdminController {
 	 */
 	@RequestMapping(value = "/pullOffBook", method = RequestMethod.POST)
 	@ResponseBody
-	public String pullOffBook(@RequestParam String book_id) {
-		if (bookService.updateBook(book_id, 9)) {
+	public String pullOffBook(@RequestBody Map info) {
+		if (bookService.updateBook((String) info.get("book_id"), 9)) {
 			return new MsgBean(0, "下架图书成功").toReturn();
 		} else {
 			return new MsgBean(1, "下架图书失败").toReturn();
@@ -186,6 +203,13 @@ public class AdminController {
 
 	}
 
+	/**
+	 * 获取全部待买图书
+	 * 
+	 * @param start
+	 * @param limit
+	 * @return
+	 */
 	@RequestMapping(value = "/allVoidBooks", method = RequestMethod.GET)
 	@ResponseBody
 	public String getAllVoidBooks(@RequestParam int start, @RequestParam int limit) {
@@ -195,5 +219,65 @@ public class AdminController {
 		PageInfo<Book> pageInfo = new PageInfo<Book>(allBooks);
 		String bookinfos = JSON.toJSONString(pageInfo);
 		return bookinfos;
+	}
+
+	/**
+	 * 根据ISBN获取全部图书
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/getBooksByISBN", method = RequestMethod.GET)
+	@ResponseBody
+	public String getBooksByISBN() {
+		List<Book> booksList = bookService.getAddedBooks();
+		// 根据ISBN分类
+		Map<String, List<Book>> bookMap = new HashMap<String, List<Book>>();
+		for (Book book : booksList) {
+			// 对书进行查询，获取其借阅信息
+			List borrowsList = countService.bookHistory(book.getBookId());
+			if (borrowsList != null && borrowsList.size() > 0) {
+				Map borrow = (Map) borrowsList.get(0);
+				if (borrow.get("borrowstatus").equals(1)) {
+					// 没取
+					book.setTimeout(-100);
+				} else if (borrow.get("borrowstatus").equals(2)) {
+					// 没还
+					book.setTimeout(-99);
+				} else if (borrow.get("borrowstatus").equals(0)) {
+					// 过期
+					book.setTimeout(OtherUtil
+							.differentDays(OtherUtil.getSQLDate(String.valueOf(borrow.get("returntime"))), new Date()));
+				}
+
+				if (bookMap.containsKey(book.getISBN())) {
+					bookMap.get(book.getISBN()).add(book);
+				} else {
+					List<Book> list = new ArrayList<Book>();
+					list.add(book);
+					bookMap.put(book.getISBN(), list);
+				}
+			}
+		}
+		return JSON.toJSONString(bookMap);
+	}
+
+	/**
+	 * 获取书籍历史记录
+	 * 
+	 * @param book_id
+	 * @return
+	 */
+	@RequestMapping(value = "/history", method = RequestMethod.GET)
+	@ResponseBody
+	public String bookHistory(@RequestParam String book_id) {
+		List<Map> resultList = countService.bookHistory(book_id);
+		return JSON.toJSONString(resultList);
+	}
+
+	@RequestMapping(value = "/searchBorrow", method = RequestMethod.GET)
+	@ResponseBody
+	public String searchBorrow(@RequestParam String ISBN, @RequestParam String name, @RequestParam int status) {
+		List<Map> borrowList = userService.searchBorrow(null, ISBN, name, status);
+		return JSON.toJSONString(borrowList);
 	}
 }

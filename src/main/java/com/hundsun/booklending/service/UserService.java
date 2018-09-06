@@ -3,6 +3,7 @@ package com.hundsun.booklending.service;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.annotations.Param;
 import org.springframework.dao.DuplicateKeyException;
 
 import com.hundsun.booklending.bean.Book;
@@ -52,7 +53,7 @@ public interface UserService {
 	 * @param user_id,bookId
 	 * @return
 	 */
-	public boolean borrow(String userId, String bookId) throws DuplicateKeyException;
+	public boolean borrow(String userId, String bookId, String borrowId) throws DuplicateKeyException;
 
 	/**
 	 * 查看借阅
@@ -68,7 +69,7 @@ public interface UserService {
 	 * @param user_id
 	 * @return
 	 */
-	public List searchBorrow(String userId);
+	public List searchBorrow(String userId, String ISBN, String name, int status);
 
 	/**
 	 * 删除借阅
@@ -107,7 +108,46 @@ public interface UserService {
 	 * @param ISBN
 	 * @param userId
 	 * @param status
+	 * @param date
 	 * @return
 	 */
-	public Boolean likeBook(String ISBN, String userId, int status, String date);
+	public Boolean likeBook(String ISBN, String userId, int status, String date) throws DuplicateKeyException;
+
+	/**
+	 * 删除点赞图书/想看图书
+	 * 
+	 * @param ISBN
+	 * @param userId
+	 * @param status
+	 * @return
+	 */
+	public Boolean deleteBookLike(String ISBN, String userId, int status);
+
+	/**
+	 * 保存喜欢推荐
+	 * 
+	 * @param bookId
+	 * @param userId
+	 * @param date
+	 * @return
+	 */
+	public Boolean saveLikeCommend(String bookId, String userId, String date);
+
+	/**
+	 * 查询喜欢推荐
+	 * 
+	 * @param bookId
+	 * @param userId
+	 * @return
+	 */
+	public Map searchLikeCommend(String bookId, String userId);
+
+	/**
+	 * 更新推荐
+	 * 
+	 * @param bookId
+	 * @param userId
+	 * @return
+	 */
+	public Boolean updateCommend(String bookId, String userId);
 }

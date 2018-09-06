@@ -1,3 +1,4 @@
+
 package com.hundsun.booklending.controller;
 
 import java.io.File;
@@ -6,8 +7,10 @@ import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -71,18 +74,20 @@ public class UserController {
 	 */
 	@RequestMapping(value = "/login", method = RequestMethod.POST)
 	@ResponseBody
-	public String login(@RequestParam String user_id, @RequestParam String pw) {
-		User user = userService.getUserByUserId(user_id);
+	public String login(@RequestBody Map info) {
+		User user = userService.getUserByUserId((String) info.get("user_id"));
+		String pw = (String) info.get("pw");
 		if (StringUtils.isNotBlank(pw)) {
 			if (null == user) {
 				return new MsgBean(1, "没有该用户").toReturn();
 			}
 			if (pw.equals(user.getPassword())) {
-				user.setAllLoginNum(user.getAllLoginNum() + 1);
-				user.setWeekLoginNum(user.getWeekLoginNum() + 1);
-				user.setMonthLoginNum(user.getMonthLoginNum() + 1);
-				user.setYearLoginNum(user.getYearLoginNum() + 1);
-				userService.saveUser(user);
+				// user.setAllLoginNum(user.getAllLoginNum() + 1);
+				// user.setWeekLoginNum(user.getWeekLoginNum() + 1);
+				// user.setMonthLoginNum(user.getMonthLoginNum() + 1);
+				// user.setYearLoginNum(user.getYearLoginNum() + 1);
+				// userService.saveUser(user);
+				ListCache.addLoginCount();
 				return new MsgBean(0, "登陆成功").toReturn();
 			} else {
 				return new MsgBean(1, "密码错误，请重试").toReturn();
@@ -125,9 +130,11 @@ public class UserController {
 	@RequestMapping(value = "/borrow", method = RequestMethod.POST)
 	@ResponseBody
 	public String borrow(@RequestBody Map borrow_info) {
+		String borrowId = OtherUtil.getUUID();
 		try {
-			if (userService.borrow((String) borrow_info.get("user_id"), (String) borrow_info.get("book_id"))) {
-				return new MsgBean(0, "借阅成功").toReturn();
+			if (userService.borrow((String) borrow_info.get("user_id"), (String) borrow_info.get("book_id"),
+					borrowId)) {
+				return new MsgBean(0, borrowId).toReturn();
 			} else {
 				return new MsgBean(1, "借阅失败").toReturn();
 			}
@@ -180,12 +187,12 @@ public class UserController {
 	public String cancelBorrow(@RequestBody Map borrow_info) {
 		try {
 			if (bookService.updateBorrow((String) borrow_info.get("borrow_id"), 9)) {
-				return new MsgBean(0, "确认借阅成功").toReturn();
+				return new MsgBean(0, "取消借阅成功").toReturn();
 			} else {
-				return new MsgBean(1, "借阅失败").toReturn();
+				return new MsgBean(1, "取消借阅失败").toReturn();
 			}
 		} catch (DuplicateKeyException e) {
-			return new MsgBean(1, "该图书已被确认借阅").toReturn();
+			return new MsgBean(1, "该图书已被取消借阅").toReturn();
 		} catch (Exception e1) {
 			log.error(e1);
 			return new MsgBean(1, "异常错误，请检查").toReturn();
@@ -200,16 +207,16 @@ public class UserController {
 	 */
 	@RequestMapping(value = "/renew", method = RequestMethod.POST)
 	@ResponseBody
-	public String renew(@RequestParam String borrow_id) {
+	public String renew(@RequestBody Map borrow_info) {
 		try {
-			Map borrowMap = userService.searchBorrowDetails(borrow_id);
-			int days = OtherUtil.differentDays(OtherUtil.getDate((String) borrowMap.get("confirmtime")),
-					OtherUtil.getDate((String) borrowMap.get("returntime")));
+			Map borrowMap = userService.searchBorrowDetails((String) borrow_info.get("borrow_id"));
+			int days = OtherUtil.differentDays(OtherUtil.getSQLDate(String.valueOf(borrowMap.get("confirmtime"))),
+					OtherUtil.getSQLDate(String.valueOf(borrowMap.get("returntime"))));
 			if (days > 30) {
 				return new MsgBean(1, "同学，你的借阅超过2次啦～<br/>借阅次数≧2，将不能再续借啦！").toReturn();
 			}
-			String returnTime = OtherUtil.getDate(OtherUtil.getDate((String) borrowMap.get("confirmtime")), 45);
-			if (bookService.renew(returnTime, borrow_id)) {
+			String returnTime = OtherUtil.getDate(OtherUtil.getSQLDate((String) borrowMap.get("confirmtime")), 45);
+			if (bookService.renew(returnTime, (String) borrow_info.get("borrow_id"))) {
 				return new MsgBean(0, "续借成功～<br/>还书日期推迟为：" + returnTime + "<br/>请及时归还书籍，逾期不还，将会扣除你的经验值哦～").toReturn();
 			} else {
 				return new MsgBean(1, "续借失败").toReturn();
@@ -225,14 +232,14 @@ public class UserController {
 	/**
 	 * 查询用户借书
 	 * 
-	 * @param borrowInfo
+	 * @param user_id
 	 * @return
 	 */
 	@RequestMapping(value = "/searchBorrow", method = RequestMethod.GET)
 	@ResponseBody
 	public String searchBorrow(@RequestParam String user_id, @RequestParam int start, @RequestParam int limit) {
 		PageHelper.startPage(start, limit);
-		List allBooks = userService.searchBorrow(user_id);
+		List allBooks = userService.searchBorrow(user_id,null,null,-1);
 		PageInfo<Map> pageInfo = new PageInfo<Map>(allBooks);
 		String bookinfos = JSON.toJSONString(pageInfo);
 		return bookinfos;
@@ -241,29 +248,46 @@ public class UserController {
 	/**
 	 * 查询是否可以根据书名推荐图书
 	 * 
-	 * @param userid
-	 * @param ISBN
+	 * @param name
 	 * @return
 	 */
 	@RequestMapping(value = "/ifCanIntroduction", method = RequestMethod.GET)
 	@ResponseBody
-	public String ifCanIntroduction(@RequestParam String name, @RequestParam String user_id) {
-		List<Book> books = bookService.searchBooks("name", null);
-		if (null != books) {
-			for (Book book : books) {
-				if (book.getTitle().equals("name")) {
-					// 自己添加推荐，不添加书籍
-					try {
-						userService.saveCommend("user_id", book, "", OtherUtil.getDate());
-						book.setSearch(1);
-					} catch (DuplicateKeyException e) {
-						return new MsgBean(1, "已有书籍").toReturn();
+	public String ifCanIntroduction(@RequestParam String name) {
+		List<Map> books = bookService.searchAllBookInfo(name);
+		if (null != books && books.size() > 0) {
+			List<Map> sameBooks = new ArrayList<Map>();
+			List<Map> sameCommendBooks = new ArrayList<Map>();
+			List<Map> otherBooks = new ArrayList<Map>();
+			List<Map> otherCommendBooks = new ArrayList<Map>();
+			Map result = new HashMap();
+			for (Map book : books) {
+				if (book.get("title").equals(name)) {
+					result.put("search", 1);
+					if (!book.get("status").equals(0)) {
+						// 非推荐，已上架
+						sameBooks.add(book);
+					} else {
+						sameCommendBooks.add(book);
 					}
 				} else {
-					book.setSearch(0);
+					if (!book.get("status").equals(0)) {
+						// 非推荐，已上架
+						otherBooks.add(book);
+					} else {
+						otherCommendBooks.add(book);
+					}
 				}
 			}
-			String bookinfos = JSON.toJSONString(books);
+			if (result.get("search") != null) {
+				result.put("list", sameBooks);
+				result.put("commend_list", sameCommendBooks);
+			} else {
+				result.put("search", 0);
+				result.put("list", otherBooks);
+				result.put("commend_list", otherCommendBooks);
+			}
+			String bookinfos = JSON.toJSONString(result);
 			return bookinfos;
 		} else {
 			return new MsgBean(1, "暂无相似").toReturn();
@@ -271,10 +295,9 @@ public class UserController {
 	}
 
 	/**
-	 * 查询是否可以根据书名推荐图书
+	 * 推荐图书
 	 * 
-	 * @param userid
-	 * @param ISBN
+	 * @param info
 	 * @return
 	 */
 	@RequestMapping(value = "/wannaIntroduction", method = RequestMethod.POST)
@@ -312,13 +335,36 @@ public class UserController {
 	@RequestMapping(value = "/like", method = RequestMethod.POST)
 	@ResponseBody
 	public String likeBook(@RequestBody Map likeInfo) {
-		if (userService.likeBook((String) likeInfo.get("ISBN"), (String) likeInfo.get("user_id"), 1,
-				OtherUtil.getDate())) {
-			return new MsgBean(0, "点赞成功").toReturn();
-		} else {
-			return new MsgBean(1, "点赞失败").toReturn();
+		try {
+			if (userService.likeBook((String) likeInfo.get("ISBN"), (String) likeInfo.get("user_id"), 1,
+					OtherUtil.getDate())) {
+				return new MsgBean(0, "点赞成功").toReturn();
+			} else {
+				return new MsgBean(1, "点赞失败").toReturn();
+			}
+		} catch (DuplicateKeyException e) {
+			return new MsgBean(1, "已经点赞了").toReturn();
+		} catch (Exception e) {
+			return new MsgBean(1, "异常错误").toReturn();
 		}
 
+	}
+
+	/**
+	 * 根据ISBN给图书取消点赞
+	 * 
+	 * @param user_id
+	 * @param ISBN
+	 * @return
+	 */
+	@RequestMapping(value = "/like", method = RequestMethod.DELETE)
+	@ResponseBody
+	public String likeBook(@RequestParam String user_id, @RequestParam String ISBN) {
+		if (userService.deleteBookLike(ISBN, user_id, 1)) {
+			return new MsgBean(0, "取消点赞成功").toReturn();
+		} else {
+			return new MsgBean(1, "取消点赞失败").toReturn();
+		}
 	}
 
 	/**
@@ -344,14 +390,13 @@ public class UserController {
 	 * @param comment
 	 * @return
 	 */
-	@RequestMapping(value = "/savecoment", method = RequestMethod.POST)
+	@RequestMapping(value = "/saveComment", method = RequestMethod.POST)
 	@ResponseBody
-	public String saveComent(@RequestBody Map comment) {
+	public String saveComment(@RequestBody Map comment) {
 		// 先升级借阅信息，改为已评价（4）
 		if (bookService.updateBorrow((String) comment.get("borrow_id"), 4)) {
 			if (userService.saveBookComments((String) comment.get("ISBN"), (String) comment.get("user_id"),
-					(String) comment.get("content"), OtherUtil.getDate(),
-					Integer.parseInt((String) comment.get("score")))) {
+					(String) comment.get("content"), OtherUtil.getDate(), (int) comment.get("score"))) {
 				return new MsgBean(0, "成功添加评论").toReturn();
 			} else {
 				return new MsgBean(1, "添加失败").toReturn();
@@ -369,7 +414,7 @@ public class UserController {
 	 * @param limit
 	 * @return
 	 */
-	@RequestMapping(value = "/getverification", method = RequestMethod.GET)
+	@RequestMapping(value = "/getVerification", method = RequestMethod.GET)
 	@ResponseBody
 	public String getVerification(@RequestParam String user_id) {
 		String verification = OtherUtil.getRandomCode(8);
@@ -383,9 +428,9 @@ public class UserController {
 			} catch (MessagingException e) {
 				log.error("发送邮件异常", e);
 			}
-			return verification;
+			return new MsgBean(0, verification).toReturn();
 		} else {
-			return new MsgBean(1, "请保存邮箱信息后再试").toReturn();
+			return new MsgBean(1, "发送邮件失败，请确保有邮箱信息后再试").toReturn();
 		}
 	}
 
@@ -406,6 +451,32 @@ public class UserController {
 		// start, limit);
 		String infos = JSON.toJSONString(result);
 		return infos;
+	}
+
+	/**
+	 * 喜欢别人推荐
+	 * 
+	 * @param wannaInfo
+	 * @return
+	 */
+	@RequestMapping(value = "/likeCommend", method = RequestMethod.POST)
+	@ResponseBody
+	public String likeCommend(@RequestBody Map info) {
+		Map ifLike = userService.searchLikeCommend((String) info.get("book_id"), (String) info.get("user_id"));
+		if (ifLike != null) {
+			if (userService.saveLikeCommend((String) info.get("book_id"), (String) info.get("user_id"),
+					OtherUtil.getDate())) {
+				if (userService.updateCommend((String) info.get("book_id"), (String) info.get("user_id"))) {
+					return new MsgBean(0, "喜欢推荐成功").toReturn();
+				} else {
+					return new MsgBean(1, "更新推荐失败").toReturn();
+				}
+			} else {
+				return new MsgBean(1, "喜欢推荐失败").toReturn();
+			}
+		} else {
+			return new MsgBean(1, "您已经喜欢该推荐").toReturn();
+		}
 	}
 
 	/**

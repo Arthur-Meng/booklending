@@ -51,6 +51,17 @@ public class OtherUtil {
 		}
 		return date;
 	}
+	
+	public static Date getSQLDate(String dateString) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Date date = null;
+		try {
+			date = sdf.parse(dateString);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		return date;
+	}
 
 	/**
 	 * 获取days天后的日期
