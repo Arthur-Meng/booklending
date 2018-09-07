@@ -60,11 +60,15 @@ public class BookServiceImpl implements BookService {
 	}
 
 	public List getNewBooks() {
-		return bookMapper.getAllBooks(true, 0, null, true);
+		return bookMapper.getAllBooks(0,true,  null, null, -1,null, true);
 	}
 
 	public List getAddedBooks() {
-		return bookMapper.getAllBooks(null, 0, true, null);
+		return bookMapper.getAllBooks(0, null, null, null, -1, true, null);
+	}
+
+	public List getAddedBooks(String ISBN, String name, int status) {
+		return bookMapper.getAllBooks(0, null, ISBN, name, status, true, null);
 	}
 
 	public List searchLikeBook() {

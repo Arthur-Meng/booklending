@@ -50,6 +50,13 @@ public interface BookService {
 	 * @return
 	 */
 	public List getAddedBooks();
+	
+	/**
+	 * 获取新增书籍
+	 * 
+	 * @return
+	 */
+	public List getAddedBooks(String ISBN, String name, int status);
 
 	/**
 	 * 获取全部点赞数据

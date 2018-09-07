@@ -36,11 +36,25 @@
 		from book b
 		left join bookstatus s
 		on b.bookid=s.bookid
+		left
+		join borrow br
+		on
+		b.bookid=br.bookid
+		<if test="status!=null">
+			where s.status!=#{status}
+		</if>
 		<if test="ifNew!=null">
 			and s.ifnew=1
 		</if>
-		<if test="status!=null">
-			where s.status!=#{status}
+		<if test="ISBN!=null">
+			and b.ISBN=#{ISBN}
+		</if>
+		<if test="name!=null">
+			and b.title like
+			concat(concat('%',#{name,jdbcType=VARCHAR}),'%')
+		</if>
+		<if test="borrowstatus!=-1">
+			and br.borrowstatus=#{borrowstatus}
 		</if>
 		<if test="ifOrder!=null">
 			order by s.scoreall DESC
@@ -70,16 +84,19 @@
 			and s.ifnew=1
 		</if>
 	</select>
-	
+
 	<select id="searchAllBookInfo" resultType="java.util.Map">
 		select
 		b.*,s.*,c.*
-		from book b
+		from
+		book b
 		left join bookstatus s
 		on b.bookid=s.bookid
 		left join commend c
-		on b.bookid=c.bookid
-		where b.title like concat(concat('%',#{title,jdbcType=VARCHAR}),'%')
+		on
+		b.bookid=c.bookid
+		where b.title like
+		concat(concat('%',#{title,jdbcType=VARCHAR}),'%')
 	</select>
 
 	<select id="searchBookDetails" resultType="Book">

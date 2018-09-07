@@ -22,7 +22,8 @@ public class BookMapperImpl implements BookMapper {
 		return null;
 	}
 
-	public List getAllBooks(Boolean ifNew, int status, Boolean ifOrder, Boolean byTime) {
+	public List getAllBooks(int status, Boolean ifNew, String ISBN, String name, int borrowstatus, Boolean ifOrder,
+			Boolean byTime) {
 		return null;
 	}
 
@@ -37,7 +38,7 @@ public class BookMapperImpl implements BookMapper {
 	public List searchBooks(String title, Boolean ifNew) {
 		return null;
 	}
-	
+
 	public List searchAllBookInfo(String title) {
 		return null;
 	}

@@ -62,7 +62,7 @@
 			and b.title like concat(concat('%',#{name,jdbcType=VARCHAR}),'%')
 		</if>
 		<if test="status!=-1">
-			and br.status=#{status}
+			and br.borrowstatus=#{status}
 		</if>
 	</select>
 

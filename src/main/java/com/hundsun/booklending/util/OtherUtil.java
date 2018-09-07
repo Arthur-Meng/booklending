@@ -119,11 +119,11 @@ public class OtherUtil {
 	 * @param limit
 	 * @return
 	 */
-	public static List getRightInfos(List list, int start, int limit) {
+	public static List getRightInfos(List list, int start, int end) {
 		List target = new ArrayList();
 		if (null != list && list.size() >= start) {
-			if (list.size() >= start + limit) {
-				target = list.subList(start, start + limit);
+			if (list.size() >= start + end) {
+				target = list.subList(start, start + end);
 			} else {
 				target = list.subList(start, list.size());
 			}
@@ -131,8 +131,8 @@ public class OtherUtil {
 		} else {
 			return target;
 		}
-
 	}
+	
 
 	/**
 	 * 计算当前比date1多的天数

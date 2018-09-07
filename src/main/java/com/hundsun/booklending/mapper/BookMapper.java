@@ -50,8 +50,9 @@ public interface BookMapper {
 	 * 
 	 * @return
 	 */
-	public List getAllBooks(@Param("ifNew") Boolean ifNew, @Param("status") int status,
-			@Param("ifOrder") Boolean ifOrder, @Param("byTime") Boolean byTime);
+	public List getAllBooks(@Param("status") int status, @Param("ifNew") Boolean ifNew, @Param("ISBN") String ISBN,
+			@Param("name") String name, @Param("borrowstatus") int borrowstatus, @Param("ifOrder") Boolean ifOrder,
+			@Param("byTime") Boolean byTime);
 
 	/**
 	 * 获取对应bookId的图书

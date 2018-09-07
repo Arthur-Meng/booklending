@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.github.pagehelper.util.StringUtil;
 import com.hundsun.booklending.bean.Book;
 import com.hundsun.booklending.bean.MsgBean;
 import com.hundsun.booklending.service.BookService;
@@ -228,8 +229,21 @@ public class AdminController {
 	 */
 	@RequestMapping(value = "/getBooksByISBN", method = RequestMethod.GET)
 	@ResponseBody
-	public String getBooksByISBN() {
-		List<Book> booksList = bookService.getAddedBooks();
+	public String getBooksByISBN(@RequestParam String ISBN, @RequestParam String name, @RequestParam String status,
+			@RequestParam int start, @RequestParam int end) {
+		int borrow_status = -1;
+		if (!StringUtil.isEmpty(status)) {
+			borrow_status = Integer.valueOf(status);
+		}
+		String book_isbn = null;
+		if (!StringUtil.isEmpty(ISBN)) {
+			book_isbn = ISBN;
+		}
+		String book_name = null;
+		if (!StringUtil.isEmpty(name)) {
+			book_name = name;
+		}
+		List<Book> booksList = bookService.getAddedBooks(book_isbn, book_name, borrow_status);
 		// 根据ISBN分类
 		Map<String, List<Book>> bookMap = new HashMap<String, List<Book>>();
 		for (Book book : booksList) {
@@ -247,6 +261,9 @@ public class AdminController {
 					// 过期
 					book.setTimeout(OtherUtil
 							.differentDays(OtherUtil.getSQLDate(String.valueOf(borrow.get("returntime"))), new Date()));
+				} else {
+					// 架上
+					book.setTimeout(-99);
 				}
 
 				if (bookMap.containsKey(book.getISBN())) {
@@ -258,7 +275,18 @@ public class AdminController {
 				}
 			}
 		}
-		return JSON.toJSONString(bookMap);
+		List result = new ArrayList();
+		for (Map.Entry<String, List<Book>> entry : bookMap.entrySet()) {
+			result.add(entry);
+		}
+		Map finalMap = new HashMap();
+		for (Map.Entry<String, List<Book>> entry : (List<Map.Entry>) OtherUtil.getRightInfos(result, start, end)) {
+			finalMap.put(entry.getKey(), entry.getValue());
+		}
+		Map resultMap = new HashMap<>();
+		resultMap.put("data", finalMap);
+		resultMap.put("all", result.size());
+		return JSON.toJSONString(resultMap);
 	}
 
 	/**
@@ -269,15 +297,31 @@ public class AdminController {
 	 */
 	@RequestMapping(value = "/history", method = RequestMethod.GET)
 	@ResponseBody
-	public String bookHistory(@RequestParam String book_id) {
+	public String bookHistory(@RequestParam String book_id, @RequestParam int start, @RequestParam int limit) {
+		PageHelper.startPage(start, limit);
 		List<Map> resultList = countService.bookHistory(book_id);
-		return JSON.toJSONString(resultList);
+		PageInfo<Map> pageInfo = new PageInfo<Map>(resultList);
+		return JSON.toJSONString(pageInfo);
 	}
 
+	/**
+	 * 查询借阅
+	 * 
+	 * @param ISBN
+	 * @param name
+	 * @param status
+	 * @param start
+	 * @param end
+	 * @return
+	 */
 	@RequestMapping(value = "/searchBorrow", method = RequestMethod.GET)
 	@ResponseBody
-	public String searchBorrow(@RequestParam String ISBN, @RequestParam String name, @RequestParam int status) {
+	public String searchBorrow(@RequestParam String ISBN, @RequestParam String name, @RequestParam int status,
+			@RequestParam int start, @RequestParam int end) {
 		List<Map> borrowList = userService.searchBorrow(null, ISBN, name, status);
-		return JSON.toJSONString(borrowList);
+		Map finalMap = new HashMap();
+		finalMap.put("all", borrowList.size());
+		finalMap.put("data", OtherUtil.getRightInfos(borrowList, start, end));
+		return JSON.toJSONString(OtherUtil.getRightInfos(borrowList, start, end));
 	}
 }
