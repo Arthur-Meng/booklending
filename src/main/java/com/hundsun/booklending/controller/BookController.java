@@ -22,6 +22,7 @@ import com.hundsun.booklending.bean.User;
 import com.hundsun.booklending.service.BookService;
 import com.hundsun.booklending.service.UserService;
 import com.hundsun.booklending.util.JsonUtil;
+import com.hundsun.booklending.util.OtherUtil;
 
 import lombok.extern.log4j.Log4j;
 
@@ -41,6 +42,19 @@ public class BookController {
 
 	@Autowired
 	private BookService bookService;
+
+	/**
+	 * 根据book_id查看用户信息
+	 * 
+	 * @param book_id
+	 * @return
+	 */
+	@RequestMapping(value = "/bookDetails", method = RequestMethod.GET)
+	@ResponseBody
+	public String bookDetails(@RequestParam String book_id) {
+		Book book = bookService.getBookByBookId(book_id);
+		return JsonUtil.convertBean2Json(book);
+	}
 
 	/**
 	 * 获取全部图书
@@ -78,7 +92,8 @@ public class BookController {
 		for (Book book : newBooks) {
 			if (bookMap.containsKey(book.getISBN())) {
 				Book b = bookMap.get(book.getISBN());
-				if (Integer.valueOf(book.getAddTime()) > Integer.valueOf(b.getAddTime())) {
+				if (OtherUtil.differentDays(OtherUtil.getSQLDate(book.getAddTime()),
+						OtherUtil.getSQLDate(b.getAddTime())) > 0) {
 					book.setRemain(b.getRemain() + 1);
 					bookMap.put(book.getISBN(), book);
 				} else {
@@ -109,7 +124,7 @@ public class BookController {
 	 * @param limit
 	 * @return
 	 */
-	@RequestMapping(value = "/AddedBooks", method = RequestMethod.GET)
+	@RequestMapping(value = "/addedBooks", method = RequestMethod.GET)
 	@ResponseBody
 	public String getAddedBooks(@RequestParam int start, @RequestParam int limit) {
 		// start是当前页数，limit为每页页数
@@ -166,7 +181,7 @@ public class BookController {
 	 */
 	@RequestMapping(value = "/details", method = RequestMethod.GET)
 	@ResponseBody
-	public String searchBookDetails(@RequestParam String ISBN, @RequestParam String user_id) {
+	public String searchBookDetailsByISBN(@RequestParam String ISBN, @RequestParam String user_id) {
 		// start是当前页数，limit为每页页数
 		Book searchBooks = bookService.searchBookDetails(ISBN);
 		// 查询是否已经点赞

@@ -23,10 +23,12 @@ import com.github.pagehelper.PageInfo;
 import com.github.pagehelper.util.StringUtil;
 import com.hundsun.booklending.bean.Book;
 import com.hundsun.booklending.bean.MsgBean;
+import com.hundsun.booklending.bean.User;
 import com.hundsun.booklending.service.BookService;
 import com.hundsun.booklending.service.CountService;
 import com.hundsun.booklending.service.UserService;
 import com.hundsun.booklending.util.HttpUtil;
+import com.hundsun.booklending.util.JsonUtil;
 import com.hundsun.booklending.util.OtherUtil;
 
 import io.swagger.annotations.ApiOperation;
@@ -180,7 +182,7 @@ public class AdminController {
 	@RequestMapping(value = "/borrow", method = RequestMethod.DELETE)
 	@ResponseBody
 	public String deletBorrow(@RequestParam String borrow_id) {
-		if (userService.deleteBorrow("borrow_id")) {
+		if (userService.deleteBorrow(borrow_id)) {
 			return new MsgBean(0, "删除借阅成功").toReturn();
 		} else {
 			return new MsgBean(1, "删除借阅失败").toReturn();
@@ -248,7 +250,7 @@ public class AdminController {
 		Map<String, List<Book>> bookMap = new HashMap<String, List<Book>>();
 		for (Book book : booksList) {
 			// 对书进行查询，获取其借阅信息
-			List borrowsList = countService.bookHistory(book.getBookId());
+			List borrowsList = countService.bookHistory(book.getBookId(), null, null);
 			if (borrowsList != null && borrowsList.size() > 0) {
 				Map borrow = (Map) borrowsList.get(0);
 				if (borrow.get("borrowstatus").equals(1)) {
@@ -279,12 +281,15 @@ public class AdminController {
 		for (Map.Entry<String, List<Book>> entry : bookMap.entrySet()) {
 			result.add(entry);
 		}
-		Map finalMap = new HashMap();
+		List finalList = new ArrayList<>();
 		for (Map.Entry<String, List<Book>> entry : (List<Map.Entry>) OtherUtil.getRightInfos(result, start, end)) {
-			finalMap.put(entry.getKey(), entry.getValue());
+			Map finalMap = new HashMap();
+			finalMap.put("ISBN", (String) entry.getKey());
+			finalMap.put("list", entry.getValue());
+			finalList.add(finalMap);
 		}
 		Map resultMap = new HashMap<>();
-		resultMap.put("data", finalMap);
+		resultMap.put("data", finalList);
 		resultMap.put("all", result.size());
 		return JSON.toJSONString(resultMap);
 	}
@@ -297,9 +302,18 @@ public class AdminController {
 	 */
 	@RequestMapping(value = "/history", method = RequestMethod.GET)
 	@ResponseBody
-	public String bookHistory(@RequestParam String book_id, @RequestParam int start, @RequestParam int limit) {
+	public String bookHistory(@RequestParam String book_id, @RequestParam String begin_date,
+			@RequestParam String end_date, @RequestParam int start, @RequestParam int limit) {
 		PageHelper.startPage(start, limit);
-		List<Map> resultList = countService.bookHistory(book_id);
+		String beginDate = null;
+		String endDate = null;
+		if (StringUtil.isNotEmpty(begin_date)) {
+			beginDate = begin_date;
+		}
+		if (StringUtil.isNotEmpty(end_date)) {
+			endDate = end_date;
+		}
+		List<Map> resultList = countService.bookHistory(book_id, beginDate, endDate);
 		PageInfo<Map> pageInfo = new PageInfo<Map>(resultList);
 		return JSON.toJSONString(pageInfo);
 	}
@@ -316,12 +330,65 @@ public class AdminController {
 	 */
 	@RequestMapping(value = "/searchBorrow", method = RequestMethod.GET)
 	@ResponseBody
-	public String searchBorrow(@RequestParam String ISBN, @RequestParam String name, @RequestParam int status,
+	public String searchBorrow(@RequestParam String ISBN, @RequestParam String name, @RequestParam String status,
 			@RequestParam int start, @RequestParam int end) {
-		List<Map> borrowList = userService.searchBorrow(null, ISBN, name, status);
+		String search_ISBN = null;
+		String search_name = null;
+		int search_status = -1;
+		if (StringUtil.isNotEmpty(ISBN)) {
+			search_ISBN = ISBN;
+		}
+		if (StringUtil.isNotEmpty(name)) {
+			search_name = name;
+		}
+		if (StringUtil.isNotEmpty(status)) {
+			search_status = Integer.valueOf(status);
+		}
+		List<Map> borrowList = userService.searchBorrow(search_ISBN, ISBN, search_name, search_status);
 		Map finalMap = new HashMap();
 		finalMap.put("all", borrowList.size());
 		finalMap.put("data", OtherUtil.getRightInfos(borrowList, start, end));
 		return JSON.toJSONString(OtherUtil.getRightInfos(borrowList, start, end));
+	}
+
+	/**
+	 * 根据book_id查看最近用户信息
+	 * 
+	 * @param book_id
+	 * @return
+	 */
+	@RequestMapping(value = "/borrowUserDetails", method = RequestMethod.GET)
+	@ResponseBody
+	public String borrowUserDetails(@RequestParam String book_id) {
+		List<Map> resultList = countService.bookHistory(book_id, null, null);
+		if (null != resultList && resultList.size() > 0) {
+			Map result = resultList.get(0);
+			User user = userService.getUserByUserId((String) result.get("userid"));
+			result.put("username", user.getName());
+			result.put("userhead", "/api/images/" + user.getUserId() + ".jpg");
+			return JSON.toJSONString(result);
+		}
+		return new MsgBean(1, "尚无借阅记录").toReturn();
+	}
+
+	/**
+	 * 根据ISBN查看用户喜欢
+	 * 
+	 * @param ISBN
+	 * @return
+	 */
+	@RequestMapping(value = "/userLike", method = RequestMethod.GET)
+	@ResponseBody
+	public String userLike(@RequestParam String ISBN) {
+		List<Map> resultList = bookService.searchLikeBook(ISBN, null);
+		if (null != resultList && resultList.size() > 0) {
+			for (Map map : resultList) {
+				User user = userService.getUserByUserId((String) map.get("userid"));
+				map.put("username", user.getName());
+				map.put("userhead", "/api/images/" + user.getUserId() + ".jpg");
+			}
+			return JSON.toJSONString(resultList);
+		}
+		return new MsgBean(1, "尚无喜欢记录").toReturn();
 	}
 }

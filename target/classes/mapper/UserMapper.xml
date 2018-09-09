@@ -45,13 +45,17 @@
 
 	<select id="searchBorrow" resultType="java.util.Map">
 		select b.*,br.*
-		from book b
+		from book b 
+		left
+		join bookstatus bs
+		on 
+		b.bookid=bs.bookid
 		left
 		join borrow br
 		on
 		b.bookid=br.bookid
 		where
-		br.status!=0
+		bs.status!=0
 		<if test="userId!=null">
 			and br.userid=#{userId}
 		</if>
@@ -90,7 +94,7 @@
 		on
 		b.bookid=br.bookid
 		where
-		br.status=#{status}
+		br.borrowstatus=#{status}
 	</select>
 
 	<update id="updateBorrow">
@@ -125,13 +129,13 @@
 		insert into likecommend
 		(bookid,userid,date)
 		value
-		(#{book.bookId},#{userId},#{date})
+		(#{bookId},#{userId},#{date})
 	</insert>
 
 	<select id="searchLikeCommend" resultType="java.util.Map">
 		select lc.*
 		from
-		likecommend
+		likecommend lc
 		where
 		lc.bookid=#{bookId} and lc.userid=#{userId}
 	</select>

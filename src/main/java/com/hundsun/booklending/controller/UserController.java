@@ -239,7 +239,7 @@ public class UserController {
 	@ResponseBody
 	public String searchBorrow(@RequestParam String user_id, @RequestParam int start, @RequestParam int limit) {
 		PageHelper.startPage(start, limit);
-		List allBooks = userService.searchBorrow(user_id,null,null,-1);
+		List allBooks = userService.searchBorrow(user_id, null, null, -1);
 		PageInfo<Map> pageInfo = new PageInfo<Map>(allBooks);
 		String bookinfos = JSON.toJSONString(pageInfo);
 		return bookinfos;
@@ -268,6 +268,10 @@ public class UserController {
 						// 非推荐，已上架
 						sameBooks.add(book);
 					} else {
+						if (book.get("userid") != null) {
+							User user = userService.getUserByUserId((String) book.get("userid"));
+							book.put("user_name", user.getName());
+						}
 						sameCommendBooks.add(book);
 					}
 				} else {
@@ -275,6 +279,10 @@ public class UserController {
 						// 非推荐，已上架
 						otherBooks.add(book);
 					} else {
+						if (book.get("userid") != null) {
+							User user = userService.getUserByUserId((String) book.get("userid"));
+							book.put("user_name", user.getName());
+						}
 						otherCommendBooks.add(book);
 					}
 				}
@@ -463,7 +471,7 @@ public class UserController {
 	@ResponseBody
 	public String likeCommend(@RequestBody Map info) {
 		Map ifLike = userService.searchLikeCommend((String) info.get("book_id"), (String) info.get("user_id"));
-		if (ifLike != null) {
+		if (ifLike == null) {
 			if (userService.saveLikeCommend((String) info.get("book_id"), (String) info.get("user_id"),
 					OtherUtil.getDate())) {
 				if (userService.updateCommend((String) info.get("book_id"), (String) info.get("user_id"))) {
