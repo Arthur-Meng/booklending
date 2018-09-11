@@ -163,6 +163,7 @@ public class UserController {
 			Calendar cal = Calendar.getInstance();
 			cal.setTime(start);
 			int borrowDays = 30;
+			//判断是否已经续借
 			if (null != borrowDetails.get("renew")) {
 				borrowDays += 15;
 			}
@@ -212,6 +213,7 @@ public class UserController {
 			Map borrowMap = userService.searchBorrowDetails((String) borrow_info.get("borrow_id"));
 			int days = OtherUtil.differentDays(OtherUtil.getSQLDate(String.valueOf(borrowMap.get("confirmtime"))),
 					OtherUtil.getSQLDate(String.valueOf(borrowMap.get("returntime"))));
+			//判断是不是已经续借
 			if (days > 30) {
 				return new MsgBean(1, "同学，你的借阅超过2次啦～<br/>借阅次数≧2，将不能再续借啦！").toReturn();
 			}
@@ -239,7 +241,13 @@ public class UserController {
 	@ResponseBody
 	public String searchBorrow(@RequestParam String user_id, @RequestParam int start, @RequestParam int limit) {
 		PageHelper.startPage(start, limit);
-		List allBooks = userService.searchBorrow(user_id, null, null, -1);
+		List<Map> allBooks = userService.searchBorrow(user_id, null, null, -1);
+		for (Map map : allBooks) {
+			if ((int) map.get("borrowstatus") == 0) {
+				map.put("timeout_days", OtherUtil
+						.differentDays(OtherUtil.getSQLDate(String.valueOf(map.get("returntime"))), new Date()));
+			}
+		}
 		PageInfo<Map> pageInfo = new PageInfo<Map>(allBooks);
 		String bookinfos = JSON.toJSONString(pageInfo);
 		return bookinfos;

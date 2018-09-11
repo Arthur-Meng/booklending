@@ -201,5 +201,5 @@ public interface BookMapper {
 	 * @param borrowId
 	 * @return
 	 */
-	public Boolean deleteBookStatus(@Param("borrowId") String borrowId);
+	public Boolean deleteBookStatus(@Param("bookId") String bookId);
 }

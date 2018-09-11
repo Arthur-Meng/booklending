@@ -32,7 +32,7 @@
 
 	<select id="getAllBooks" resultType="Book">
 		select
-		b.*,s.*
+		DISTINCT b.bookid as id,b.*,s.*
 		from book b
 		left join bookstatus s
 		on b.bookid=s.bookid

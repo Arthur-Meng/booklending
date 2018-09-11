@@ -103,7 +103,7 @@ public class BookMapperImpl implements BookMapper {
 		return null;
 	}
 
-	public Boolean deleteBookStatus(String borrowId) {
+	public Boolean deleteBookStatus(String bookId) {
 		return null;
 	}
 

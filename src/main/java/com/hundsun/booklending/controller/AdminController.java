@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.ibatis.javassist.expr.NewArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Controller;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageHelper;
@@ -72,37 +70,37 @@ public class AdminController {
 	@RequestMapping(value = "/saveBook", method = RequestMethod.POST)
 	@ResponseBody
 	public String saveBook(@RequestBody Map info) {
-		Map bookMap = HttpUtil.getBookInfo((String) info.get("ISBN"));
-		Book book = bookService.transMapToBook(bookMap);
-		// 查询有无类似书名但是没ISBN的信息，如果有就替换该信息
-		List<Book> books = bookService.searchBooks(book.getTitle(), null);
-		if (null != books) {
-			for (Book b : books) {
-				if (b.getTitle().equals(book.getTitle())) {
-					bookService.deleteBook(b.getBookId());
-					bookService.deleteBookStatus(b.getBookId());
-					book.setBookId(b.getBookId());
+		for (int i = 0; i < (int) info.get("size"); i++) {
+			Map bookMap = HttpUtil.getBookInfo((String) info.get("ISBN"));
+			if (null != bookMap.get("msg") && bookMap.get("msg").equals("book_not_found")) {
+				return new MsgBean(1, "无法根据该ISBN获取图书信息，请检查").toReturn();
+			}
+			Book book = bookService.transMapToBook(bookMap);
+			book.setStatus("1");
+			// 查询有无类似书名但是没ISBN的信息，如果有就替换该信息
+			List<Book> books = bookService.searchBooks(book.getTitle(), null);
+			if (null != books) {
+				for (Book b : books) {
+					if (b.getTitle().equals(book.getTitle()) && StringUtil.isEmpty(b.getISBN())) {
+						bookService.deleteBook(b.getBookId());
+						bookService.deleteBookStatus(b.getBookId());
+						book.setBookId(b.getBookId());
+						break;
+					}
 				}
 			}
-		}
-		if (bookService.saveBook(book)) {
-			if (bookService.saveBookStatus(book)) {
-				if (userService.saveCommend((String) info.get("user_id"), book, (String) info.get("reason"),
-						OtherUtil.getDate())) {
-					return new MsgBean(0, "保存图书成功").toReturn();
+			// 保存该书
+			if (bookService.saveBook(book)) {
+				if (bookService.saveBookStatus(book)) {
 				} else {
 					bookService.deleteBook(book.getBookId());
-					bookService.deleteBookStatus(book.getBookId());
-					return new MsgBean(1, "保存图书时添加推荐失败").toReturn();
+					return new MsgBean(1, "保存图书状态失败").toReturn();
 				}
 			} else {
-				bookService.deleteBook(book.getBookId());
-				return new MsgBean(1, "保存图书状态失败").toReturn();
+				return new MsgBean(1, "保存图书失败").toReturn();
 			}
-		} else {
-			return new MsgBean(1, "保存图书失败").toReturn();
 		}
-
+		return new MsgBean(0, "保存图书成功").toReturn();
 	}
 
 	/**
@@ -265,22 +263,26 @@ public class AdminController {
 							.differentDays(OtherUtil.getSQLDate(String.valueOf(borrow.get("returntime"))), new Date()));
 				} else {
 					// 架上
-					book.setTimeout(-99);
+					book.setTimeout(-98);
 				}
-
-				if (bookMap.containsKey(book.getISBN())) {
-					bookMap.get(book.getISBN()).add(book);
-				} else {
-					List<Book> list = new ArrayList<Book>();
-					list.add(book);
-					bookMap.put(book.getISBN(), list);
-				}
+			}else {
+				// 架上
+				book.setTimeout(-98);
+			}
+			if (bookMap.containsKey(book.getISBN())) {
+				bookMap.get(book.getISBN()).add(book);
+			} else {
+				List<Book> list = new ArrayList<Book>();
+				list.add(book);
+				bookMap.put(book.getISBN(), list);
 			}
 		}
+		//转换为list进行切割
 		List result = new ArrayList();
 		for (Map.Entry<String, List<Book>> entry : bookMap.entrySet()) {
 			result.add(entry);
 		}
+		//造型为前端需要的数据
 		List finalList = new ArrayList<>();
 		for (Map.Entry<String, List<Book>> entry : (List<Map.Entry>) OtherUtil.getRightInfos(result, start, end)) {
 			Map finalMap = new HashMap();
@@ -314,6 +316,15 @@ public class AdminController {
 			endDate = end_date;
 		}
 		List<Map> resultList = countService.bookHistory(book_id, beginDate, endDate);
+		//增加前端需要的数据
+		for (Map map : resultList) {
+			if (null == map.get("confirmtime")) {
+				map.put("confirmtime", "");
+			}
+			if (null == map.get("returntime")) {
+				map.put("returntime", "");
+			}
+		}
 		PageInfo<Map> pageInfo = new PageInfo<Map>(resultList);
 		return JSON.toJSONString(pageInfo);
 	}
