@@ -40,8 +40,9 @@
 		join borrow br
 		on
 		b.bookid=br.bookid
+		where s.status!=9
 		<if test="status!=null">
-			where s.status!=#{status}
+			and s.status!=#{status}
 		</if>
 		<if test="ifNew!=null">
 			and s.ifnew=1

@@ -45,15 +45,15 @@
 
 	<select id="searchBorrow" resultType="java.util.Map">
 		select b.*,br.*
-		from book b 
+		from borrow br
+		left
+		join book b
+		on
+		b.bookid=br.bookid
 		left
 		join bookstatus bs
 		on 
 		b.bookid=bs.bookid
-		left
-		join borrow br
-		on
-		b.bookid=br.bookid
 		where
 		bs.status!=0
 		<if test="userId!=null">

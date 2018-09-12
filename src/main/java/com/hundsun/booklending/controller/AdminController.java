@@ -355,7 +355,16 @@ public class AdminController {
 		if (StringUtil.isNotEmpty(status)) {
 			search_status = Integer.valueOf(status);
 		}
-		List<Map> borrowList = userService.searchBorrow(search_ISBN, ISBN, search_name, search_status);
+		List<Map> borrowList = userService.searchBorrow(null, search_ISBN, search_name, search_status);
+		//增加过期信息
+		for (Map map : borrowList) {
+			if ((int) map.get("borrowstatus") == 0) {
+				map.put("timeout_days", OtherUtil
+						.differentDays(OtherUtil.getSQLDate(String.valueOf(map.get("returntime"))), new Date()));
+			}else {
+				map.put("timeout_days",-1);
+			}
+		}
 		Map finalMap = new HashMap();
 		finalMap.put("all", borrowList.size());
 		finalMap.put("data", OtherUtil.getRightInfos(borrowList, start, end));
