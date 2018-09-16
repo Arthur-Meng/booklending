@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hundsun.booklending.mapper.CountMapper">
+	<select id="countBook" resultType="java.lang.Integer">
+		select count(*) from book b
+		left join bookstatus bs
+		on
+		b.bookid=bs.bookid
+		where bs.status!=0
+		<if test="ifHave!=null">
+			and bs.status!=9
+		</if>
+	</select>
+
+	<select id="countBorrow" resultType="java.lang.Integer">
+		select count(*) from borrow
+		where borrowstatus!=8 and borrowstatus!=9
+		<if test="status!=null">
+			and borrowstatus=#{status}
+		</if>
+	</select>
+
+	<insert id="saveLogin">
+		insert into logincount
+		(date,count)
+		value
+		(#{date},#{count})
+	</insert>
+
+	<update id="updateLogin">
+		update logincount
+		set count=#{count}
+		where
+		date=#{date}
+	</update>
+
+	<select id="countLogin" resultType="java.util.Map">
+		select * from logincount
+		where date between #{beginDate} and #{endDate}
+	</select>
+
+	<select id="bookHistory" resultType="java.util.Map">
+		select br.* from borrow br
+		where br.bookid=#{bookId}
+		order by
+		br.borrowtime DESC
+		<if test="beginDate!=null and  endDate!=null">
+			where br.borrowtime between #{beginDate} and #{endDate}
+			or
+			br.confirmtime between #{beginDate} and #{endDate}
+		</if>
+	</select>
+
+</mapper>

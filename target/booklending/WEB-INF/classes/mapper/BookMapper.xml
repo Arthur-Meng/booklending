@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hundsun.booklending.mapper.BookMapper">
+
+
+	<insert id="saveBook" parameterType="book">
+		insert into book
+		(bookid,ISBN,title,author,pubdate,tags,image,binding,translator,publisher,author_intro,summary,price,ebook_price)
+		value
+		(#{book.bookId,jdbcType=VARCHAR},#{book.ISBN,jdbcType=VARCHAR},#{book.title,jdbcType=VARCHAR},
+		#{book.author,jdbcType=VARCHAR},#{book.pubdate,jdbcType=VARCHAR},#{book.tags,jdbcType=VARCHAR},
+		#{book.image,jdbcType=VARCHAR},#{book.binding,jdbcType=VARCHAR},#{book.translator,jdbcType=VARCHAR},
+		#{book.publisher,jdbcType=VARCHAR},#{book.author_intro,jdbcType=VARCHAR},#{book.summary,jdbcType=VARCHAR},
+		#{book.price,jdbcType=VARCHAR},#{book.ebook_price,jdbcType=VARCHAR})
+	</insert>
+
+	<insert id="saveBookStatus" parameterType="book">
+		insert into bookstatus
+		(bookid,status,addtime,ifnew)
+		value
+		(#{book.bookId,jdbcType=VARCHAR},#{book.status,jdbcType=VARCHAR},#{book.addTime,jdbcType=VARCHAR},#{book.ifNew})
+	</insert>
+
+	<select id="getAllVoidBooks" resultType="Book">
+		select
+		b.*,s.*
+		from book b
+		left join bookstatus s
+		on b.bookid=s.bookid
+		where s.status=0
+	</select>
+
+	<!--<select id="getAllBooks" resultType="Book"> select b.*,s.* from book 
+		b left join bookstatus s on b.bookid=s.bookid left join borrow br on b.bookid=br.bookid 
+		where s.status!=9 and (br.borrowtime=( select max(brw.borrowtime) from borrow 
+		brw where b.bookid=brw.bookid ) or br.borrowtime is NULL) <if test="status!=null"> 
+		and s.status!=#{status} </if> <if test="ifNew!=null"> and s.ifnew=1 </if> 
+		<if test="ISBN!=null"> and b.ISBN=#{ISBN} </if> <if test="name!=null"> and 
+		b.title like concat(concat('%',#{name,jdbcType=VARCHAR}),'%') </if> <if test="borrowstatus!=-1"> 
+		and br.borrowstatus=#{borrowstatus} </if> <if test="ifOrder!=null"> order 
+		by s.scoreall DESC </if> <if test="byTime!=null"> order by s.addtime DESC 
+		</if> </select> -->
+
+	<select id="getAllBooks" resultType="Book">
+		select
+		b.*,s.*
+		from book b
+		left join bookstatus s
+		on b.bookid=s.bookid
+		where s.status!=9
+		<if test="status!=-1">
+			and s.status=#{status}
+		</if>
+		<if test="nostatus!=-1">
+			and s.status!=#{nostatus}
+		</if>
+		<if test="ISBN!=null">
+			and b.ISBN=#{ISBN}
+		</if>
+		<if test="name!=null">
+			and b.title like
+			concat(concat('%',#{name,jdbcType=VARCHAR}),'%')
+		</if>
+		<if test="ifNew!=null">
+			and s.ifnew=1
+		</if>
+		<if test="ifOrder!=null">
+			order by s.scoreall DESC
+		</if>
+		<if test="byTime!=null">
+			order by s.addtime DESC
+		</if>
+	</select>
+
+	<select id="getBookById" resultType="Book">
+		select
+		b.*
+		from book
+		b
+		where
+		b.bookid=#{bookId,jdbcType=VARCHAR}
+	</select>
+
+	<select id="searchBooks" resultType="Book">
+		select
+		b.*,s.*
+		from book b
+		left join bookstatus s
+		on b.bookid=s.bookid
+		where b.title like concat(concat('%',#{title,jdbcType=VARCHAR}),'%')
+		and s.status!=0 and s.status!=9
+		<if test="ifNew!=null">
+			and s.ifnew=1
+		</if>
+	</select>
+
+	<select id="searchAllBookInfo" resultType="java.util.Map">
+		select
+		b.*,s.*,c.*
+		from
+		book b
+		left join bookstatus s
+		on b.bookid=s.bookid
+		left join commend c
+		on
+		b.bookid=c.bookid
+		where b.title like
+		concat(concat('%',#{title,jdbcType=VARCHAR}),'%')
+	</select>
+
+	<select id="searchBookDetails" resultType="Book">
+		select
+		b.*,bs.*
+		from
+		book b
+		left join bookstatus bs
+		on b.bookid=bs.bookid
+		where
+		b.ISBN=#{ISBN,jdbcType=VARCHAR}
+	</select>
+
+	<insert id="saveBookComments">
+		insert into comment
+		(ISBN,userid,content,date,score)
+		value
+		(#{ISBN,jdbcType=VARCHAR},#{userId,jdbcType=VARCHAR},#{content,jdbcType=VARCHAR},#{date,jdbcType=VARCHAR},#{score})
+	</insert>
+
+	<select id="searchBookComments" resultType="java.util.Map">
+		select
+		c.*
+		from comment c
+		left join book b
+		on b.ISBN=c.ISBN
+		<if test="ISBN!=null">
+			where
+			b.ISBN=#{ISBN,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<select id="searchUserCommendBooks" resultType="java.util.Map">
+		select
+		b.*,c.*
+		from
+		book b
+		left join commend c
+		on b.bookid=c.bookid
+		where
+		c.userid=#{userId,jdbcType=VARCHAR}
+	</select>
+
+	<select id="searchCommendBooks" resultType="java.util.Map">
+		select
+		b.*,c.*
+		from
+		book b
+		left join commend c
+		on b.bookid=c.bookid
+		where
+		c.userid!=#{userId,jdbcType=VARCHAR}
+	</select>
+
+	<insert id="likeBook">
+		insert into booklike
+		(ISBN,userid,status,date)
+		value
+		(#{ISBN,jdbcType=VARCHAR},#{userId,jdbcType=VARCHAR},#{status},#{date,jdbcType=VARCHAR})
+	</insert>
+
+	<delete id="deleteBookLike">
+		delete from booklike
+		where
+		userid=#{userId,jdbcType=VARCHAR} and ISBN=#{ISBN,jdbcType=VARCHAR}
+		and status=#{status}
+	</delete>
+
+	<select id="searchLikeBook" resultType="java.util.Map">
+		select
+		bl.*
+		from
+		book b
+		left
+		join booklike bl
+		on b.ISBN=bl.ISBN
+		where
+		bl.status=#{status}
+		<if test="ISBN!=null">
+			and bl.ISBN=#{ISBN,jdbcType=VARCHAR}
+		</if>
+		<if test="userId!=null">
+			and bl.userid=#{userId,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<update id="updateBook">
+		update bookstatus bs
+		set bs.status=#{status}
+		where
+		bs.bookid=#{bookId,jdbcType=VARCHAR}
+	</update>
+
+	<select id="searchBookStatus" resultType="java.util.Map">
+		select
+		bs.*,b.*
+		from bookstatus bs
+		left
+		join book b
+		on
+		b.bookid=bs.bookid
+		<if test="ISBN!=null">
+			where
+			b.ISBN=#{ISBN,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<update id="updateBookStatus">
+		update bookstatus bs
+		<set>
+			<if test="bookStatus.likeall!=null">
+				likeall=#{bookStatus.likeall},
+			</if>
+			<if test="bookStatus.wannaall!=null">
+				wannaall=#{bookStatus.wannaall},
+			</if>
+			<if test="bookStatus.commentall!=null">
+				commentall=#{bookStatus.commentall},
+			</if>
+			<if test="bookStatus.scoreall!=null">
+				scoreall=#{bookStatus.scoreall},
+			</if>
+			<if test="bookStatus.ifNew!=null">
+				ifnew=#{bookStatus.ifNew},
+			</if>
+		</set>
+		where
+		bs.bookid=#{bookStatus.bookid}
+	</update>
+
+	<update id="updateBorrow">
+		update borrow br
+		<set>
+			<if test="status!=null">
+				br.borrowstatus=#{status},
+			</if>
+			<if test="confirmtime!=null">
+				br.confirmtime=#{confirmtime},
+			</if>
+		</set>
+		where
+		br.borrowid=#{borrowId,jdbcType=VARCHAR}
+	</update>
+
+	<update id="renew">
+		update borrow br
+		set
+		br.returntime=#{returnTime,jdbcType=VARCHAR},
+		br.renew=1
+		where
+		br.borrowid=#{borrowId,jdbcType=VARCHAR}
+	</update>
+
+	<delete id="deleteBook">
+		delete from book
+		where
+		bookid=#{bookId}
+	</delete>
+
+	<delete id="deleteBookStatus">
+		delete from bookstatus
+		where
+		bookid=#{bookId}
+	</delete>
+
+</mapper>
