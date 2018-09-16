@@ -22,7 +22,7 @@ public class BookMapperImpl implements BookMapper {
 		return null;
 	}
 
-	public List getAllBooks(int status, Boolean ifNew, String ISBN, String name, int borrowstatus, Boolean ifOrder,
+	public List getAllBooks(int status, int nostatus, String ISBN, String name, Boolean ifNew, Boolean ifOrder,
 			Boolean byTime) {
 		return null;
 	}
@@ -91,7 +91,7 @@ public class BookMapperImpl implements BookMapper {
 		return null;
 	}
 
-	public Boolean updateBorrow(String borrowId, int status) {
+	public Boolean updateBorrow(String borrowId,String confirmtime,int status) {
 		return null;
 	}
 

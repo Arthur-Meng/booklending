@@ -60,15 +60,15 @@ public class BookServiceImpl implements BookService {
 	}
 
 	public List getNewBooks() {
-		return bookMapper.getAllBooks(0,true,  null, null, -1,null, true);
+		return bookMapper.getAllBooks(-1, 0, null, null, true, null, true);
 	}
 
 	public List getAddedBooks() {
-		return bookMapper.getAllBooks(0, null, null, null, -1, true, null);
+		return bookMapper.getAllBooks(-1, 0, null, null, null, true, null);
 	}
 
 	public List getAddedBooks(String ISBN, String name, int status) {
-		return bookMapper.getAllBooks(0, null, ISBN, name, status, true, null);
+		return bookMapper.getAllBooks(status, 0, ISBN, name, null, true, null);
 	}
 
 	public List searchLikeBook() {
@@ -93,12 +93,21 @@ public class BookServiceImpl implements BookService {
 
 	public Book searchBookDetails(String ISBN) {
 		List<Book> books = (List<Book>) bookMapper.searchBookDetails(ISBN);
+		Book returnBook = new Book();
+		int remain = 0;
 		for (Book book : books) {
 			if (null != book.getStatus() && book.getStatus().equals("1")) {
-				return book;
+				returnBook = book;
+				remain++;
 			}
 		}
-		return books.get(0);
+		if (null == returnBook.getBookId()) {
+			return books.get(0);
+		} else {
+			returnBook.setRemain(remain);
+			return returnBook;
+		}
+
 	}
 
 	public List searchBookComments(String ISBN) {
@@ -125,8 +134,8 @@ public class BookServiceImpl implements BookService {
 		}
 	}
 
-	public Boolean updateBorrow(String borrowId, int status) {
-		if (bookMapper.updateBorrow(borrowId, status)) {
+	public Boolean updateBorrow(String borrowId, String confirmtime, int status) {
+		if (bookMapper.updateBorrow(borrowId, confirmtime, status)) {
 			return true;
 		} else {
 			return false;

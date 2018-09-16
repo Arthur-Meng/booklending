@@ -16,6 +16,7 @@ import com.hundsun.booklending.mapper.UserMapper;
 import com.hundsun.booklending.service.BookService;
 import com.hundsun.booklending.service.UserService;
 import com.hundsun.booklending.util.OtherUtil;
+import com.sun.org.apache.xml.internal.serializer.ElemDesc;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -58,7 +59,9 @@ public class UserServiceImpl implements UserService {
 		// 保存借阅信息且更新图书状态
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd");
 		String dateString = df.format(new Date());
-		if (userMapper.borrow(borrowId, userId, bookId, dateString, 1) && booService.updateBook(bookId, 2)) {
+		String returString = OtherUtil.getDate(new Date(), 30);
+		if (userMapper.borrow(borrowId, userId, bookId, dateString, returString, 1)
+				&& booService.updateBook(bookId, 2)) {
 			return true;
 		} else {
 			return false;
@@ -70,7 +73,13 @@ public class UserServiceImpl implements UserService {
 	}
 
 	public List searchBorrow(String userId, String ISBN, String name, int status) {
-		return userMapper.searchBorrow(userId, ISBN, name, status);
+		if (status == 7) {
+			// 如果为7表示忽略取消原因，返回8和9状态的
+			return userMapper.searchBorrow(userId, ISBN, name, -1, true);
+		} else {
+			return userMapper.searchBorrow(userId, ISBN, name, status, null);
+		}
+
 	}
 
 	public boolean deleteBorrow(String borrowId) {
@@ -146,7 +155,29 @@ public class UserServiceImpl implements UserService {
 	}
 
 	public Boolean deleteBookLike(String ISBN, String userId, int status) {
-		return bookMapper.deleteBookLike(ISBN, userId, status);
+		if (bookMapper.deleteBookLike(ISBN, userId, status)) {
+			List<Map> books = bookMapper.searchBookStatus(ISBN);
+			for (Map book : books) {
+				if (status == 1) {
+					if (book.get("likeall") != null) {
+						book.put("likeall", (int) book.get("likeall") - 1);
+					} else {
+						book.put("likeall", 1);
+					}
+
+				} else {
+					if (book.get("wannaall") != null) {
+						book.put("wannaall", (int) book.get("wannaall") - 1);
+					} else {
+						book.put("wannaall", 1);
+					}
+				}
+				bookMapper.updateBookStatus(book);
+			}
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	public Boolean saveLikeCommend(String bookId, String userId, String date) {

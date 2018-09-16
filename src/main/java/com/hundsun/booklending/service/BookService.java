@@ -50,7 +50,7 @@ public interface BookService {
 	 * @return
 	 */
 	public List getAddedBooks();
-	
+
 	/**
 	 * 获取新增书籍
 	 * 
@@ -64,13 +64,13 @@ public interface BookService {
 	 * @return
 	 */
 	public List searchLikeBook();
-	
+
 	/**
 	 * 获取用户
 	 * 
 	 * @return
 	 */
-	public List searchLikeBook(String ISBN,String userId);
+	public List searchLikeBook(String ISBN, String userId);
 
 	/**
 	 * 获取全部想看数据
@@ -110,14 +110,14 @@ public interface BookService {
 	 * @return
 	 */
 	public List searchBooks(String title, Boolean ifNew);
-	
+
 	/**
 	 * 获取全部图书信息
 	 * 
 	 * @param title
 	 * @return
 	 */
-	public List searchAllBookInfo( String title);
+	public List searchAllBookInfo(String title);
 
 	/**
 	 * 查看细节图书
@@ -176,7 +176,7 @@ public interface BookService {
 	 * @return
 	 * @throws DuplicateKeyException
 	 */
-	public Boolean updateBorrow(String borrowId, int status) throws DuplicateKeyException;
+	public Boolean updateBorrow(String borrowId, String confirmtime, int status);
 
 	/**
 	 * 续借

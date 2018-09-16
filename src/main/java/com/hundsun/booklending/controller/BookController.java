@@ -44,7 +44,7 @@ public class BookController {
 	private BookService bookService;
 
 	/**
-	 * 根据book_id查看用户信息
+	 * 根据book_id查看书籍信息
 	 * 
 	 * @param book_id
 	 * @return
@@ -84,21 +84,13 @@ public class BookController {
 	@RequestMapping(value = "/newBooks", method = RequestMethod.GET)
 	@ResponseBody
 	public String getNewBooks(@RequestParam int start, @RequestParam int limit) {
-		// start是当前页数，limit为每页页数
-		PageHelper.startPage(start, limit);
 		List<Book> newBooks = bookService.getNewBooks();
-		// 这里需要对书籍的列表进行过滤，筛选出ISBN一样的最新的书籍。
-		Map<String, Book> bookMap = new LinkedHashMap<String, Book>();
+		// 这里需要对书籍的列表进行过滤，筛选出ISBN一样的书籍。
+		Map<String, Book> bookMap = new HashMap<String, Book>();
 		for (Book book : newBooks) {
 			if (bookMap.containsKey(book.getISBN())) {
 				Book b = bookMap.get(book.getISBN());
-				if (OtherUtil.differentDays(OtherUtil.getSQLDate(book.getAddTime()),
-						OtherUtil.getSQLDate(b.getAddTime())) > 0) {
-					book.setRemain(b.getRemain() + 1);
-					bookMap.put(book.getISBN(), book);
-				} else {
-					b.setRemain(b.getRemain() + 1);
-				}
+				b.setRemain(b.getRemain() + 1);
 			} else {
 				Book b = book;
 				b.setRemain(1);
@@ -112,9 +104,10 @@ public class BookController {
 			book.setBookId("");
 			books.add(book);
 		}
-		PageInfo<Book> pageInfo = new PageInfo<Book>(books);
-		String bookinfos = JSON.toJSONString(pageInfo);
-		return bookinfos;
+		Map resultMap = new HashMap<>();
+		resultMap.put("data", OtherUtil.getRightInfos(books, start, limit));
+		resultMap.put("all", books.size());
+		return JSON.toJSONString(resultMap);
 	}
 
 	/**
@@ -127,8 +120,6 @@ public class BookController {
 	@RequestMapping(value = "/addedBooks", method = RequestMethod.GET)
 	@ResponseBody
 	public String getAddedBooks(@RequestParam int start, @RequestParam int limit) {
-		// start是当前页数，limit为每页页数
-		PageHelper.startPage(start, limit);
 		List<Book> allBooks = bookService.getAddedBooks();
 		// 这里需要对书籍的列表进行过滤，筛选出ISBN一样的书籍。
 		Map<String, Book> bookMap = new HashMap<String, Book>();
@@ -149,9 +140,10 @@ public class BookController {
 			book.setBookId("");
 			books.add(book);
 		}
-		PageInfo<Book> pageInfo = new PageInfo<Book>(books);
-		String bookinfos = JSON.toJSONString(pageInfo);
-		return bookinfos;
+		Map resultMap = new HashMap<>();
+		resultMap.put("data", OtherUtil.getRightInfos(books, start, limit));
+		resultMap.put("all", books.size());
+		return JSON.toJSONString(resultMap);
 	}
 
 	/**
@@ -182,7 +174,6 @@ public class BookController {
 	@RequestMapping(value = "/details", method = RequestMethod.GET)
 	@ResponseBody
 	public String searchBookDetailsByISBN(@RequestParam String ISBN, @RequestParam String user_id) {
-		// start是当前页数，limit为每页页数
 		Book searchBooks = bookService.searchBookDetails(ISBN);
 		// 查询是否已经点赞
 		List likesList = bookService.searchLikeBook(ISBN, user_id);

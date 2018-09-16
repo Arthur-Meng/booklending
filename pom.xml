@@ -6,7 +6,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>恒生图示借阅系统</name>
 	<description>恒生图示借阅系统</description>
-	<!--<packaging>war</packaging>-->
+	<packaging>war</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

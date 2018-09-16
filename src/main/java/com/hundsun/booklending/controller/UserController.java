@@ -163,7 +163,7 @@ public class UserController {
 			Calendar cal = Calendar.getInstance();
 			cal.setTime(start);
 			int borrowDays = 30;
-			//判断是否已经续借
+			// 判断是否已经续借
 			if (null != borrowDetails.get("renew")) {
 				borrowDays += 15;
 			}
@@ -180,15 +180,20 @@ public class UserController {
 	/**
 	 * 取消借书
 	 * 
-	 * @param user
+	 * @param borrow_info
 	 * @return
 	 */
 	@RequestMapping(value = "/cancelBorrow", method = RequestMethod.POST)
 	@ResponseBody
 	public String cancelBorrow(@RequestBody Map borrow_info) {
 		try {
-			if (bookService.updateBorrow((String) borrow_info.get("borrow_id"), 9)) {
-				return new MsgBean(0, "取消借阅成功").toReturn();
+			if (bookService.updateBorrow((String) borrow_info.get("borrow_id"), null, 9)) {
+				Map borrowMap = userService.searchBorrowDetails((String) borrow_info.get("borrow_id"));
+				if (bookService.updateBook((String) borrowMap.get("bookid"), 1)) {
+					return new MsgBean(0, "取消借阅成功").toReturn();
+				} else {
+					return new MsgBean(1, "更新书籍状态失败").toReturn();
+				}
 			} else {
 				return new MsgBean(1, "取消借阅失败").toReturn();
 			}
@@ -211,13 +216,12 @@ public class UserController {
 	public String renew(@RequestBody Map borrow_info) {
 		try {
 			Map borrowMap = userService.searchBorrowDetails((String) borrow_info.get("borrow_id"));
-			int days = OtherUtil.differentDays(OtherUtil.getSQLDate(String.valueOf(borrowMap.get("confirmtime"))),
-					OtherUtil.getSQLDate(String.valueOf(borrowMap.get("returntime"))));
-			//判断是不是已经续借
-			if (days > 30) {
+			// 判断是不是已经续借
+			if (null != borrowMap.get("renew") && borrowMap.get("renew").equals(1)) {
 				return new MsgBean(1, "同学，你的借阅超过2次啦～<br/>借阅次数≧2，将不能再续借啦！").toReturn();
 			}
-			String returnTime = OtherUtil.getDate(OtherUtil.getSQLDate((String) borrowMap.get("confirmtime")), 45);
+			String returnTime = OtherUtil.getDate(OtherUtil.getSQLDate(String.valueOf(borrowMap.get("confirmtime"))),
+					45);
 			if (bookService.renew(returnTime, (String) borrow_info.get("borrow_id"))) {
 				return new MsgBean(0, "续借成功～<br/>还书日期推迟为：" + returnTime + "<br/>请及时归还书籍，逾期不还，将会扣除你的经验值哦～").toReturn();
 			} else {
@@ -295,13 +299,13 @@ public class UserController {
 					}
 				}
 			}
-			if (result.get("search") != null) {
+			if (result.get("search") != null && result.get("search").equals(1)) {
 				result.put("list", sameBooks);
 				result.put("commend_list", sameCommendBooks);
 			} else {
 				result.put("search", 0);
-				result.put("list", otherBooks);
-				result.put("commend_list", otherCommendBooks);
+				result.put("list", OtherUtil.getRightInfos(otherBooks, 0, 3));
+				result.put("commend_list", OtherUtil.getRightInfos(otherCommendBooks, 0, 3));
 			}
 			String bookinfos = JSON.toJSONString(result);
 			return bookinfos;
@@ -323,6 +327,7 @@ public class UserController {
 		newBook.setBookId(OtherUtil.getUUID());
 		newBook.setTitle((String) info.get("name"));
 		newBook.setStatus("0");
+		newBook.setIfNew(0);
 		if (bookService.saveBook(newBook)) {
 			if (bookService.saveBookStatus(newBook)) {
 				if (userService.saveCommend((String) info.get("user_id"), newBook, (String) info.get("reason"),
@@ -410,7 +415,7 @@ public class UserController {
 	@ResponseBody
 	public String saveComment(@RequestBody Map comment) {
 		// 先升级借阅信息，改为已评价（4）
-		if (bookService.updateBorrow((String) comment.get("borrow_id"), 4)) {
+		if (bookService.updateBorrow((String) comment.get("borrow_id"), null, 4)) {
 			if (userService.saveBookComments((String) comment.get("ISBN"), (String) comment.get("user_id"),
 					(String) comment.get("content"), OtherUtil.getDate(), (int) comment.get("score"))) {
 				return new MsgBean(0, "成功添加评论").toReturn();

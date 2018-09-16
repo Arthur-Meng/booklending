@@ -50,8 +50,8 @@ public interface BookMapper {
 	 * 
 	 * @return
 	 */
-	public List getAllBooks(@Param("status") int status, @Param("ifNew") Boolean ifNew, @Param("ISBN") String ISBN,
-			@Param("name") String name, @Param("borrowstatus") int borrowstatus, @Param("ifOrder") Boolean ifOrder,
+	public List getAllBooks(@Param("status") int status, @Param("nostatus") int nostatus, @Param("ISBN") String ISBN,
+			@Param("name") String name, @Param("ifNew") Boolean ifNew, @Param("ifOrder") Boolean ifOrder,
 			@Param("byTime") Boolean byTime);
 
 	/**
@@ -178,7 +178,7 @@ public interface BookMapper {
 	 * 
 	 * @return
 	 */
-	public Boolean updateBorrow(@Param("borrowId") String borrowId, @Param("status") int status);
+	public Boolean updateBorrow(@Param("borrowId") String borrowId,@Param("confirmtime") String confirmtime, @Param("status") int status);
 
 	/**
 	 * 续借

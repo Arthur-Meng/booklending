@@ -27,7 +27,8 @@ public class UserMapperImpl implements UserMapper {
 		return null;
 	}
 
-	public Boolean borrow(String borrowId, String userId, String bookId, String borrowTime, int status) {
+	public Boolean borrow(String borrowId, String userId, String bookId, String borrowTime, String returnTime,
+			int status) {
 		return null;
 	}
 
@@ -35,7 +36,7 @@ public class UserMapperImpl implements UserMapper {
 		return null;
 	}
 
-	public List searchBorrow(String userId, String ISBN, String name, int status) {
+	public List searchBorrow(String userId, String ISBN, String name, int status,Boolean cancelstatus) {
 		return null;
 	}
 

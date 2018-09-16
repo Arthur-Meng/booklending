@@ -39,7 +39,7 @@ public class Book {
 	public String price;
 	// 电子书价格
 	public String ebook_price;
-	// 图书状态（0表示已推荐，1表示可借阅状态，2表示不可借阅状态,9表示已经过期）
+	// 图书状态（0表示已推荐，1表示可借阅状态，2表示被借阅状态,3是超期未还,9表示下架）
 	// 借阅状态（0表示已过期，1表示待取书，2表示确认借阅（未还书），3表示已还书，4表示已经评价,8表示被动取消,9表示主动取消）
 	public String status;
 	// 添加时间
@@ -54,9 +54,11 @@ public class Book {
 	public int scoreall;
 	// 剩余
 	public int remain;
-	//是否喜欢
+	// 是否新书
+	public int ifNew;
+	// 是否喜欢
 	public int ifLike;
-	//过期时间,-99表示待取书
+	// 过期时间,-99表示待取书
 	public int timeout;
 
 	/**

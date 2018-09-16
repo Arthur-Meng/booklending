@@ -72,11 +72,12 @@ public class AdminController {
 	public String saveBook(@RequestBody Map info) {
 		for (int i = 0; i < (int) info.get("size"); i++) {
 			Map bookMap = HttpUtil.getBookInfo((String) info.get("ISBN"));
-			if (null != bookMap.get("msg") && bookMap.get("msg").equals("book_not_found")) {
+			if (null == bookMap || (null != bookMap.get("msg") && bookMap.get("msg").equals("book_not_found"))) {
 				return new MsgBean(1, "无法根据该ISBN获取图书信息，请检查").toReturn();
 			}
 			Book book = bookService.transMapToBook(bookMap);
 			book.setStatus("1");
+			book.setIfNew(1);
 			// 查询有无类似书名但是没ISBN的信息，如果有就替换该信息
 			List<Book> books = bookService.searchBooks(book.getTitle(), null);
 			if (null != books) {
@@ -114,7 +115,7 @@ public class AdminController {
 	@ResponseBody
 	public String confirmBorrow(@RequestBody Map borrow_info) {
 		try {
-			if (bookService.updateBorrow((String) borrow_info.get("borrow_id"), 2)) {
+			if (bookService.updateBorrow((String) borrow_info.get("borrow_id"), OtherUtil.getDate(), 2)) {
 				return new MsgBean(0, "确认借阅成功").toReturn();
 			} else {
 				return new MsgBean(1, "确认借阅失败").toReturn();
@@ -138,8 +139,13 @@ public class AdminController {
 	@ResponseBody
 	public String confirmReturn(@RequestBody Map borrow_info) {
 		try {
-			if (bookService.updateBorrow((String) borrow_info.get("borrow_id"), 3)) {
-				return new MsgBean(0, "确认还书成功").toReturn();
+			if (bookService.updateBorrow((String) borrow_info.get("borrow_id"), null, 3)) {
+				Map borrowMap = userService.searchBorrowDetails((String) borrow_info.get("borrow_id"));
+				if (bookService.updateBook((String) borrowMap.get("bookid"), 1)) {
+					return new MsgBean(0, "确认还书成功").toReturn();
+				} else {
+					return new MsgBean(1, "更新书籍状态失败").toReturn();
+				}
 			} else {
 				return new MsgBean(1, "确认还书失败").toReturn();
 			}
@@ -265,7 +271,7 @@ public class AdminController {
 					// 架上
 					book.setTimeout(-98);
 				}
-			}else {
+			} else {
 				// 架上
 				book.setTimeout(-98);
 			}
@@ -277,12 +283,12 @@ public class AdminController {
 				bookMap.put(book.getISBN(), list);
 			}
 		}
-		//转换为list进行切割
+		// 转换为list进行切割
 		List result = new ArrayList();
 		for (Map.Entry<String, List<Book>> entry : bookMap.entrySet()) {
 			result.add(entry);
 		}
-		//造型为前端需要的数据
+		// 造型为前端需要的数据
 		List finalList = new ArrayList<>();
 		for (Map.Entry<String, List<Book>> entry : (List<Map.Entry>) OtherUtil.getRightInfos(result, start, end)) {
 			Map finalMap = new HashMap();
@@ -316,7 +322,7 @@ public class AdminController {
 			endDate = end_date;
 		}
 		List<Map> resultList = countService.bookHistory(book_id, beginDate, endDate);
-		//增加前端需要的数据
+		// 增加前端需要的数据
 		for (Map map : resultList) {
 			if (null == map.get("confirmtime")) {
 				map.put("confirmtime", "");
@@ -356,19 +362,47 @@ public class AdminController {
 			search_status = Integer.valueOf(status);
 		}
 		List<Map> borrowList = userService.searchBorrow(null, search_ISBN, search_name, search_status);
-		//增加过期信息
+		// 增加过期信息
 		for (Map map : borrowList) {
 			if ((int) map.get("borrowstatus") == 0) {
 				map.put("timeout_days", OtherUtil
 						.differentDays(OtherUtil.getSQLDate(String.valueOf(map.get("returntime"))), new Date()));
-			}else {
-				map.put("timeout_days",-1);
+			} else {
+				map.put("timeout_days", -1);
 			}
 		}
 		Map finalMap = new HashMap();
 		finalMap.put("all", borrowList.size());
 		finalMap.put("data", OtherUtil.getRightInfos(borrowList, start, end));
 		return JSON.toJSONString(OtherUtil.getRightInfos(borrowList, start, end));
+	}
+
+	/**
+	 * 取消借书
+	 * 
+	 * @param borrow_info
+	 * @return
+	 */
+	@RequestMapping(value = "/cancelBorrow", method = RequestMethod.POST)
+	@ResponseBody
+	public String cancelBorrow(@RequestBody Map borrow_info) {
+		try {
+			if (bookService.updateBorrow((String) borrow_info.get("borrow_id"), null, 8)) {
+				Map borrowMap = userService.searchBorrowDetails((String) borrow_info.get("borrow_id"));
+				if (bookService.updateBook((String) borrowMap.get("bookid"), 1)) {
+					return new MsgBean(0, "取消借阅成功").toReturn();
+				} else {
+					return new MsgBean(1, "更新书籍状态失败").toReturn();
+				}
+			} else {
+				return new MsgBean(1, "取消借阅失败").toReturn();
+			}
+		} catch (DuplicateKeyException e) {
+			return new MsgBean(1, "该图书已被取消借阅").toReturn();
+		} catch (Exception e1) {
+			log.error(e1);
+			return new MsgBean(1, "异常错误，请检查").toReturn();
+		}
 	}
 
 	/**

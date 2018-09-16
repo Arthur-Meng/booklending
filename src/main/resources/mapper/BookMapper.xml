@@ -16,9 +16,9 @@
 
 	<insert id="saveBookStatus" parameterType="book">
 		insert into bookstatus
-		(bookid,status,addtime)
+		(bookid,status,addtime,ifnew)
 		value
-		(#{book.bookId,jdbcType=VARCHAR},#{book.status,jdbcType=VARCHAR},#{book.addTime,jdbcType=VARCHAR})
+		(#{book.bookId,jdbcType=VARCHAR},#{book.status,jdbcType=VARCHAR},#{book.addTime,jdbcType=VARCHAR},#{book.ifNew})
 	</insert>
 
 	<select id="getAllVoidBooks" resultType="Book">
@@ -30,22 +30,29 @@
 		where s.status=0
 	</select>
 
+	<!--<select id="getAllBooks" resultType="Book"> select b.*,s.* from book 
+		b left join bookstatus s on b.bookid=s.bookid left join borrow br on b.bookid=br.bookid 
+		where s.status!=9 and (br.borrowtime=( select max(brw.borrowtime) from borrow 
+		brw where b.bookid=brw.bookid ) or br.borrowtime is NULL) <if test="status!=null"> 
+		and s.status!=#{status} </if> <if test="ifNew!=null"> and s.ifnew=1 </if> 
+		<if test="ISBN!=null"> and b.ISBN=#{ISBN} </if> <if test="name!=null"> and 
+		b.title like concat(concat('%',#{name,jdbcType=VARCHAR}),'%') </if> <if test="borrowstatus!=-1"> 
+		and br.borrowstatus=#{borrowstatus} </if> <if test="ifOrder!=null"> order 
+		by s.scoreall DESC </if> <if test="byTime!=null"> order by s.addtime DESC 
+		</if> </select> -->
+
 	<select id="getAllBooks" resultType="Book">
 		select
-		DISTINCT b.bookid as id,b.*,s.*
+		b.*,s.*
 		from book b
 		left join bookstatus s
 		on b.bookid=s.bookid
-		left
-		join borrow br
-		on
-		b.bookid=br.bookid
 		where s.status!=9
-		<if test="status!=null">
-			and s.status!=#{status}
+		<if test="status!=-1">
+			and s.status=#{status}
 		</if>
-		<if test="ifNew!=null">
-			and s.ifnew=1
+		<if test="nostatus!=-1">
+			and s.status!=#{nostatus}
 		</if>
 		<if test="ISBN!=null">
 			and b.ISBN=#{ISBN}
@@ -54,8 +61,8 @@
 			and b.title like
 			concat(concat('%',#{name,jdbcType=VARCHAR}),'%')
 		</if>
-		<if test="borrowstatus!=-1">
-			and br.borrowstatus=#{borrowstatus}
+		<if test="ifNew!=null">
+			and s.ifnew=1
 		</if>
 		<if test="ifOrder!=null">
 			order by s.scoreall DESC
@@ -81,6 +88,7 @@
 		left join bookstatus s
 		on b.bookid=s.bookid
 		where b.title like concat(concat('%',#{title,jdbcType=VARCHAR}),'%')
+		and s.status!=0 and s.status!=9
 		<if test="ifNew!=null">
 			and s.ifnew=1
 		</if>
@@ -230,7 +238,14 @@
 
 	<update id="updateBorrow">
 		update borrow br
-		set br.borrowstatus=#{status}
+		<set>
+			<if test="status!=null">
+				br.borrowstatus=#{status},
+			</if>
+			<if test="confirmtime!=null">
+				br.confirmtime=#{confirmtime},
+			</if>
+		</set>
 		where
 		br.borrowid=#{borrowId,jdbcType=VARCHAR}
 	</update>

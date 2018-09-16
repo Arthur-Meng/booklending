@@ -25,9 +25,9 @@
 
 	<insert id="borrow">
 		insert into borrow
-		(borrowid,userid,bookid,borrowtime,borrowstatus)
+		(borrowid,userid,bookid,borrowtime,returntime,borrowstatus)
 		value
-		(#{borrowId},#{userId},#{bookId},#{borrowTime},#{status})
+		(#{borrowId},#{userId},#{bookId},#{borrowTime},#{returnTime},#{status})
 	</insert>
 
 	<select id="searchBorrowDetails" resultType="java.util.Map">
@@ -52,7 +52,7 @@
 		b.bookid=br.bookid
 		left
 		join bookstatus bs
-		on 
+		on
 		b.bookid=bs.bookid
 		where
 		bs.status!=0
@@ -63,10 +63,14 @@
 			and b.ISBN=#{ISBN}
 		</if>
 		<if test="name!=null">
-			and b.title like concat(concat('%',#{name,jdbcType=VARCHAR}),'%')
+			and b.title like
+			concat(concat('%',#{name,jdbcType=VARCHAR}),'%')
 		</if>
 		<if test="status!=-1">
 			and br.borrowstatus=#{status}
+		</if>
+		<if test="cancelstatus!=null">
+			and (br.borrowstatus=8 or br.borrowstatus=9)
 		</if>
 	</select>
 

@@ -53,7 +53,8 @@ public interface UserMapper {
 	 * @return
 	 */
 	public Boolean borrow(@Param("borrowId") String borrowId, @Param("userId") String userId,
-			@Param("bookId") String bookId, @Param("borrowTime") String borrowTime, @Param("status") int status);
+			@Param("bookId") String bookId, @Param("borrowTime") String borrowTime,
+			@Param("returnTime") String returnTime, @Param("status") int status);
 
 	/**
 	 * 查看用户借书
@@ -70,7 +71,7 @@ public interface UserMapper {
 	 * @return
 	 */
 	public List searchBorrow(@Param("userId") String userId, @Param("ISBN") String ISBN, @Param("name") String name,
-			@Param("status") int status);
+			@Param("status") int status,@Param("cancelstatus") Boolean cancelstatus);
 
 	/**
 	 * 删除借书记录
