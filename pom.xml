@@ -132,13 +132,13 @@
 			<artifactId>mail</artifactId>
 			<version>1.4.7</version>
 		</dependency>
-		<!-- 加密 -->
+		<!-- 加密
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcprov-jdk14</artifactId>
 			<version>1.38</version>
 			<type>jar</type>
-		</dependency>
+		</dependency> -->
 		<!-- IO -->
 		<dependency>
 			<groupId>org.apache.commons</groupId>
